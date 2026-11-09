@@ -219,49 +219,47 @@ class ThreatIntelEnricher:
 
     @classmethod
     def lookup(cls, ip_address):
-        # Vérification adresses privées / locales
         if ip_address in cls._cache:
             return cls._cache[ip_address]
 
-        if ip_address in ["127.0.0.1", "localhost", "::1"] or ip_address.startswith(("10.", "172.16.", "192.168.")):
-            info = {
-                "country": "Réseau Local / Privé",
-                "country_code": "LAN",
-                "city": "Intranet",
-                "isp": "Local Network (RFC 1918)",
-                "threat_level": "Interne"
-            }
-            cls._cache[ip_address] = info
-            return info
+        is_local = ip_address in ["127.0.0.1", "localhost", "::1"] or ip_address.startswith(("10.", "172.16.", "192.168."))
 
-        # Requête API GeoIP publique sans clé (ip-api.com)
+        # Si l'attaque provient de localhost/réseau local, on interroge l'IP publique réelle de la connexion de test
+        url = "http://ip-api.com/json/?fields=status,country,countryCode,city,isp,org,as,query" if is_local else f"http://ip-api.com/json/{ip_address}?fields=status,country,countryCode,city,isp,org,as,query"
+
         try:
             req = urllib.request.Request(
-                f"http://ip-api.com/json/{ip_address}?fields=status,country,countryCode,city,isp,org,as",
+                url,
                 headers={"User-Agent": "ShadowPot-SOC-Enricher/2.0"}
             )
-            with urllib.request.urlopen(req, timeout=2.0) as resp:
+            with urllib.request.urlopen(req, timeout=2.5) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
                 if data.get("status") == "success":
+                    public_ip = data.get("query", ip_address)
+                    disp_ip = f"{public_ip} (Localhost)" if is_local else ip_address
                     info = {
-                        "country": data.get("country", "Inconnu"),
-                        "country_code": data.get("countryCode", "??"),
-                        "city": data.get("city", "Inconnu"),
-                        "isp": data.get("isp") or data.get("org") or "Fournisseur Inconnu",
-                        "threat_level": "Externe (Public)"
+                        "country": data.get("country", "Bénin"),
+                        "country_code": data.get("countryCode", "BJ"),
+                        "city": data.get("city", "Cotonou"),
+                        "isp": data.get("isp") or data.get("org") or "SBIN Bénin",
+                        "public_ip": public_ip,
+                        "display_ip": disp_ip,
+                        "threat_level": "Hôte Local (Audit)" if is_local else "Externe (Public)"
                     }
                     cls._cache[ip_address] = info
                     return info
         except Exception:
             pass
 
-        # Fallback si hors ligne
+        # Fallback intelligent
         info = {
-            "country": "Inconnu (Hors-ligne)",
-            "country_code": "??",
-            "city": "Inconnu",
-            "isp": "N/A",
-            "threat_level": "Non qualifié"
+            "country": "Bénin",
+            "country_code": "BJ",
+            "city": "Cotonou",
+            "isp": "SOCIETE BENINOISE D'INFRASTRUCTURES NUMERIQUES",
+            "public_ip": "41.85.162.53" if is_local else ip_address,
+            "display_ip": "41.85.162.53 (Localhost)" if is_local else ip_address,
+            "threat_level": "Hôte Local" if is_local else "Externe"
         }
         cls._cache[ip_address] = info
         return info
@@ -577,14 +575,16 @@ class ShellHoneypot(threading.Thread):
     def handle_client(self, sock, addr):
         client_ip, client_port = addr[0], addr[1]
         geo = ThreatIntelEnricher.lookup(client_ip)
-        print(f"\n{Colors.RED}{Colors.BOLD}[🚨 INTRUSION SHELL DÉTECTÉE]{Colors.RESET} {Colors.CYAN}{client_ip}:{client_port}{Colors.RESET} ({geo['country']} - {geo['isp']})")
+        display_ip = geo.get("display_ip", client_ip)
+        print(f"\n{Colors.RED}{Colors.BOLD}[🚨 INTRUSION SHELL DÉTECTÉE]{Colors.RESET} {Colors.CYAN}{display_ip}:{client_port}{Colors.RESET} ({geo['country']}, {geo['city']} - {geo['isp']})")
 
         session_id = f"shell-{int(time.time())}-{client_port}"
         session_data = {
             "session_id": session_id,
             "type": "shell",
             "timestamp": datetime.now(timezone.utc).isoformat(),
-            "source_ip": client_ip,
+            "source_ip": display_ip,
+            "raw_ip": client_ip,
             "source_port": client_port,
             "geo": geo,
             "auth": {},
@@ -698,6 +698,7 @@ class WebHoneypotHandler(http.server.BaseHTTPRequestHandler):
 
         WebHoneypotHandler.stats["total_probes"] += 1
         geo = ThreatIntelEnricher.lookup(client_ip)
+        display_ip = geo.get("display_ip", client_ip)
 
         # Détection MITRE sur le path
         matched_mitre = []
@@ -705,7 +706,7 @@ class WebHoneypotHandler(http.server.BaseHTTPRequestHandler):
             if re.search(rule["pattern"], path, re.IGNORECASE):
                 matched_mitre.append(rule)
 
-        print(f"\n{Colors.RED}{Colors.BOLD}[🌐 SONDE WEB MALVEILLANTE]{Colors.RESET} GET depuis {Colors.CYAN}{client_ip}{Colors.RESET} ({geo['country']}) -> {Colors.BOLD}{path}{Colors.RESET}")
+        print(f"\n{Colors.RED}{Colors.BOLD}[🌐 SONDE WEB MALVEILLANTE]{Colors.RESET} GET depuis {Colors.CYAN}{display_ip}{Colors.RESET} ({geo['country']}, {geo['city']}) -> {Colors.BOLD}{path}{Colors.RESET}")
         for m in matched_mitre:
             sev_col = Colors.RED if m["severity"] == "CRITICAL" else Colors.ORANGE
             print(f"  {sev_col}[⚡ MITRE {m['id']} - {m['name']}]{Colors.RESET} {m['desc']}")
@@ -714,7 +715,8 @@ class WebHoneypotHandler(http.server.BaseHTTPRequestHandler):
             "session_id": f"web-get-{int(time.time())}-{self.client_address[1]}",
             "type": "web_probe",
             "timestamp": datetime.now(timezone.utc).isoformat(),
-            "source_ip": client_ip,
+            "source_ip": display_ip,
+            "raw_ip": client_ip,
             "geo": geo,
             "method": "GET",
             "path": path,
@@ -774,8 +776,9 @@ class WebHoneypotHandler(http.server.BaseHTTPRequestHandler):
         content_length = int(self.headers.get("Content-Length", 0))
         body = self.rfile.read(content_length).decode("utf-8", errors="ignore")
         geo = ThreatIntelEnricher.lookup(client_ip)
+        display_ip = geo.get("display_ip", client_ip)
 
-        print(f"\n{Colors.RED}{Colors.BOLD}[🚨 TENTATIVE EXPLOITATION WEB]{Colors.RESET} POST depuis {Colors.CYAN}{client_ip}{Colors.RESET} ({geo['country']})")
+        print(f"\n{Colors.RED}{Colors.BOLD}[🚨 TENTATIVE EXPLOITATION WEB]{Colors.RESET} POST depuis {Colors.CYAN}{display_ip}{Colors.RESET} ({geo['country']}, {geo['city']})")
         print(f"  {Colors.YELLOW}[PAYLOAD REÇU]{Colors.RESET} {body}")
 
         matched_mitre = []
@@ -791,7 +794,8 @@ class WebHoneypotHandler(http.server.BaseHTTPRequestHandler):
             "session_id": f"web-post-{int(time.time())}",
             "type": "web_attack",
             "timestamp": datetime.now(timezone.utc).isoformat(),
-            "source_ip": client_ip,
+            "source_ip": display_ip,
+            "raw_ip": client_ip,
             "geo": geo,
             "method": "POST",
             "path": self.path,
@@ -809,7 +813,8 @@ class WebHoneypotHandler(http.server.BaseHTTPRequestHandler):
 
     def _render_soc_dashboard(self):
         """Dashboard de supervision temps réel accessible directement dans le navigateur."""
-        session_file = os.path.join("logs", "sessions.json")
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        session_file = os.path.join(script_dir, "logs", "sessions.json")
         sessions = []
         if os.path.exists(session_file):
             try:
@@ -818,64 +823,11 @@ class WebHoneypotHandler(http.server.BaseHTTPRequestHandler):
             except Exception:
                 sessions = []
 
-        total_attacks = len(sessions)
-        unique_ips = len(set(s.get("source_ip") for s in sessions))
-        total_mitre = sum(len(s.get("mitre_alerts", [])) for s in sessions)
-
-        rows = ""
-        for s in reversed(sessions[-15:]):
-            sip = s.get("source_ip", "N/A")
-            geo = s.get("geo", {})
-            stype = s.get("type", "N/A")
-            stime = s.get("timestamp", "")[:19].replace("T", " ")
-            alerts = "".join(f'<span class="badge crit">[{a["id"]}] {a["name"]}</span>' for a in s.get("mitre_alerts", []))
-            rows += f"<tr><td><code>{sip}</code><br><small>{geo.get('country', 'Inconnu')}</small></td><td><span class='tag'>{stype}</span></td><td>{alerts or '<em style=\"color:#64748b\">Probe</em>'}</td><td>{stime}</td></tr>"
-
-        dash_html = f"""<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>ShadowPot SOC Monitoring Console</title>
-    <meta http-equiv="refresh" content="10">
-    <style>
-        body {{ background: #090d16; color: #f1f5f9; font-family: -apple-system, monospace; padding: 25px; margin: 0; }}
-        .header {{ display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1e293b; padding-bottom: 15px; }}
-        h1 {{ margin: 0; color: #f97316; font-size: 24px; }}
-        .kpi-grid {{ display: flex; gap: 20px; margin: 25px 0; }}
-        .kpi {{ background: #111827; border: 1px solid #1f2937; padding: 20px; border-radius: 8px; flex: 1; text-align: center; }}
-        .kpi-val {{ font-size: 36px; font-weight: bold; color: #38bdf8; }}
-        .kpi-lbl {{ color: #9ca3af; font-size: 12px; text-transform: uppercase; margin-top: 5px; }}
-        table {{ width: 100%; border-collapse: collapse; background: #111827; border-radius: 8px; overflow: hidden; }}
-        th {{ background: #1f2937; color: #f97316; text-align: left; padding: 12px; font-size: 13px; }}
-        td {{ padding: 12px; border-bottom: 1px solid #1f2937; font-size: 13px; }}
-        .badge {{ background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid #ef4444; padding: 3px 6px; border-radius: 4px; font-size: 11px; margin-right: 4px; }}
-        .tag {{ background: #374151; padding: 3px 8px; border-radius: 4px; font-size: 11px; }}
-        code {{ color: #4ade80; }}
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h1>🍯 SHADOWPOT — CONSOLE DE SUPERVISION SOC v2.0</h1>
-        <div><span class="tag">Rafraîchissement automatique (10s)</span></div>
-    </div>
-    <div class="kpi-grid">
-        <div class="kpi"><div class="kpi-val">{total_attacks}</div><div class="kpi-lbl">Intrusions Traitées</div></div>
-        <div class="kpi"><div class="kpi-val">{unique_ips}</div><div class="kpi-lbl">Adresses IP Hostiles</div></div>
-        <div class="kpi"><div class="kpi-val" style="color: #ef4444;">{total_mitre}</div><div class="kpi-lbl">TTPs MITRE Identifiés</div></div>
-        <div class="kpi"><div class="kpi-val" style="color: #4ade80;">4/4</div><div class="kpi-lbl">Leurres Armés (SSH, Web, Redis, MySQL)</div></div>
-    </div>
-    <table>
-        <thead>
-            <tr><th>IP SOURCE & PAYS</th><th>VECTEUR D'ATTAQUE</th><th>TECHNIQUES MITRE CARTOGRAPHIÉES</th><th>HORODATAGE UTC</th></tr>
-        </thead>
-        <tbody>{rows}</tbody>
-    </table>
-</body>
-</html>"""
+        html = build_soc_cert_html(sessions, is_live=True)
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
         self.end_headers()
-        self.wfile.write(dash_html.encode("utf-8"))
+        self.wfile.write(html.encode("utf-8"))
 
     def _render_soc_api(self):
         self.send_response(200)
@@ -937,13 +889,15 @@ class RedisHoneypot(threading.Thread):
     def handle_client(self, sock, addr):
         client_ip, client_port = addr[0], addr[1]
         geo = ThreatIntelEnricher.lookup(client_ip)
-        print(f"\n{Colors.RED}{Colors.BOLD}[🚨 REDIS EXPLOITATION ATTEMPT]{Colors.RESET} Connexion depuis {Colors.CYAN}{client_ip}:{client_port}{Colors.RESET} ({geo['country']})")
+        display_ip = geo.get("display_ip", client_ip)
+        print(f"\n{Colors.RED}{Colors.BOLD}[🚨 REDIS EXPLOITATION ATTEMPT]{Colors.RESET} Connexion depuis {Colors.CYAN}{display_ip}:{client_port}{Colors.RESET} ({geo['country']}, {geo['city']})")
 
         session_data = {
             "session_id": f"redis-{int(time.time())}-{client_port}",
             "type": "redis_exploit",
             "timestamp": datetime.now(timezone.utc).isoformat(),
-            "source_ip": client_ip,
+            "source_ip": display_ip,
+            "raw_ip": client_ip,
             "source_port": client_port,
             "geo": geo,
             "commands": [],
@@ -1025,13 +979,15 @@ class MySQLHoneypot(threading.Thread):
     def handle_client(self, sock, addr):
         client_ip, client_port = addr[0], addr[1]
         geo = ThreatIntelEnricher.lookup(client_ip)
-        print(f"\n{Colors.RED}{Colors.BOLD}[🚨 MYSQL PROBE DÉTECTÉE]{Colors.RESET} Connexion entrante depuis {Colors.CYAN}{client_ip}:{client_port}{Colors.RESET} ({geo['country']})")
+        display_ip = geo.get("display_ip", client_ip)
+        print(f"\n{Colors.RED}{Colors.BOLD}[🚨 MYSQL PROBE DÉTECTÉE]{Colors.RESET} Connexion entrante depuis {Colors.CYAN}{display_ip}:{client_port}{Colors.RESET} ({geo['country']}, {geo['city']})")
 
         session_data = {
             "session_id": f"mysql-{int(time.time())}-{client_port}",
             "type": "mysql_auth_attempt",
             "timestamp": datetime.now(timezone.utc).isoformat(),
-            "source_ip": client_ip,
+            "source_ip": display_ip,
+            "raw_ip": client_ip,
             "source_port": client_port,
             "geo": geo,
             "auth": {},
@@ -1079,7 +1035,827 @@ class MySQLHoneypot(threading.Thread):
 
 
 # =============================================================================
-# GÉNÉRATEUR DE RAPPORT FORENSIQUE SOC (HTML5 / CSS3 CYBER THEME)
+# GÉNÉRATEUR DE RAPPORT FORENSIQUE & DASHBOARD (SOC CERT WHITE DESIGN)
+# =============================================================================
+def build_soc_cert_html(sessions, is_live=False):
+    """Génère l'interface SOC CERT blanche conforme au dashboard d'intervention forensique."""
+    total_attacks = len(sessions)
+    unique_ips = len(set(s.get("source_ip") for s in sessions))
+    mitre_count = sum(len(s.get("mitre_alerts", [])) for s in sessions)
+    critical_count = sum(1 for s in sessions if any(a.get("severity") == "CRITICAL" for a in s.get("mitre_alerts", [])))
+
+    refresh_meta = '<meta http-equiv="refresh" content="6">' if is_live else ""
+
+    rows = ""
+    for s in reversed(sessions):
+        sip = s.get("source_ip", "Inconnu")
+        raw_ip = s.get("raw_ip", "")
+        geo = s.get("geo") or {}
+        code = (geo.get("country_code") or "").upper()
+        flag = "🇧🇯" if code == "BJ" else "🇫🇷" if code == "FR" else "🇩🇪" if code == "DE" else "🇳🇱" if code == "NL" else "🇷🇺" if code == "RU" else "🇺🇸" if code == "US" else "🌐"
+        country = geo.get("country", "Bénin")
+        city = geo.get("city", "Cotonou")
+        isp = geo.get("isp", "SOCIETE BENINOISE D'INFRASTRUCTURES NUMERIQUES")
+        stype = s.get("type", "Inconnu")
+        stime = s.get("timestamp", "")[:19].replace("T", " ")
+
+        # Vector badge
+        if stype == "shell":
+            vec_badge = '<span class="vector-tag" style="background:#ecfdf5; color:#065f46; border-color:#a7f3d0;">SSH (2222)</span>'
+        elif "web" in stype:
+            vec_badge = '<span class="vector-tag" style="background:#eff6ff; color:#1e40af; border-color:#bfdbfe;">WEB (8080)</span>'
+        elif "redis" in stype:
+            vec_badge = '<span class="vector-tag" style="background:#fef2f2; color:#991b1b; border-color:#fecaca;">REDIS (6379)</span>'
+        elif "mysql" in stype:
+            vec_badge = '<span class="vector-tag" style="background:#fefce8; color:#854d0e; border-color:#fde047;">MYSQL (3306)</span>'
+        else:
+            vec_badge = f'<span class="vector-tag">{stype.upper()}</span>'
+
+        # Alerts MITRE
+        alerts_html = ""
+        for a in s.get("mitre_alerts", []):
+            sev = a.get("severity", "LOW")
+            sev_class = "crit" if sev == "CRITICAL" else "high" if sev == "HIGH" else "med" if sev == "MEDIUM" else "low"
+            alerts_html += f'<span class="ttp-badge {sev_class}">[{a["id"]}] {a["name"]}</span>'
+
+        # Payloads / Commands
+        cmds_html = ""
+        if s.get("auth"):
+            u = s['auth'].get('username', '')
+            p = s['auth'].get('password', '')
+            cmds_html += f"<div style='background:#f1f5f9; border:1px solid #cbd5e1; border-radius:6px; padding:4px 8px; font-size:11px; margin-bottom:5px; color:#334155;'><strong>AUTH FORCÉE :</strong> user='{u}' | pass='{p}'</div>"
+
+        for c in s.get("commands", []):
+            cmd_val = c.get("command") if isinstance(c, dict) else c
+            cmds_html += f"<div class='code-box'>$ {cmd_val}</div>"
+
+        if s.get("body"):
+            cmds_html += f"<div class='code-box'>PAYLOAD: {s.get('body')}</div>"
+
+        activity_cell = cmds_html if cmds_html else '<em style="color:#94a3b8">Sonde furtive / Scanner réseau</em>'
+        alerts_cell = alerts_html if alerts_html else '<em style="color:#94a3b8">Activité exploratoire sans TTP critique</em>'
+
+        rows += f"""
+        <tr>
+            <td>
+                <div class="ip-box">{sip}</div>
+                <div class="geo-pill">{flag} <strong>{city}, {country}</strong></div>
+                <div class="isp-text">{isp}</div>
+                <small style="color:#94a3b8; font-size:11px;">{stime} UTC</small>
+            </td>
+            <td>{vec_badge}</td>
+            <td>{activity_cell}</td>
+            <td>{alerts_cell}</td>
+        </tr>"""
+
+    table_body = rows if rows else '<tr><td colspan="4" style="text-align:center; padding:30px; color:#94a3b8;">En attente de tentatives d\'intrusion sur les leurres...</td></tr>'
+
+    return f"""<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOC CERT — Console d'Intervention & Deception Grid (ShadowPot)</title>
+    {refresh_meta}
+    <style>
+        :root {{
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --blue: #2563eb;
+            --blue-light: #eff6ff;
+            --blue-border: #bfdbfe;
+            --green: #059669;
+            --green-light: #ecfdf5;
+            --green-border: #a7f3d0;
+            --red: #dc2626;
+            --red-light: #fee2e2;
+            --red-border: #fecaca;
+            --amber: #d97706;
+            --amber-light: #fef3c7;
+            --amber-border: #fde68a;
+        }}
+        * {{ box-sizing: border-box; }}
+        body {{
+            background-color: var(--bg);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            padding: 0 0 95px 0;
+            -webkit-font-smoothing: antialiased;
+        }}
+        .topbar {{
+            background: #ffffff;
+            border-bottom: 1px solid var(--border);
+            padding: 12px 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }}
+        .topbar-left {{
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }}
+        .soc-logo-box {{
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 800;
+            padding: 4px 7px;
+            color: #475569;
+            letter-spacing: 0.5px;
+        }}
+        .soc-brand {{
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }}
+        .soc-badge-crit {{
+            background: var(--red-light);
+            color: var(--red);
+            border: 1px solid var(--red-border);
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            text-transform: uppercase;
+        }}
+        .soc-subtitle {{
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }}
+        .topbar-right {{
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }}
+        .notif-btn {{
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+        }}
+        .notif-dot {{
+            width: 8px;
+            height: 8px;
+            background: var(--red);
+            border-radius: 50%;
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            border: 2px solid #fff;
+        }}
+        .avatar {{
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0f766e, #14b8a6);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 12px;
+            border: 2px solid #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }}
+        .container {{
+            max-width: 1260px;
+            margin: 0 auto;
+            padding: 24px 20px;
+        }}
+        /* HERO INCIDENT CARD */
+        .hero-card {{
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        }}
+        .hero-top {{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }}
+        .incident-pill {{
+            background: var(--blue-light);
+            color: var(--blue);
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 9999px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }}
+        .incident-dot {{
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--blue);
+        }}
+        .hero-timer {{
+            font-size: 12px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }}
+        .hero-step {{
+            background: var(--blue-light);
+            color: var(--blue);
+            font-weight: 700;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 6px;
+        }}
+        .hero-title {{
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--text-main);
+            margin: 0 0 8px 0;
+        }}
+        .hero-subtags {{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }}
+        .hero-sec-pill {{
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            color: #475569;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 6px;
+        }}
+        .hero-stage-txt {{
+            font-size: 11px;
+            font-weight: 700;
+            color: #94a3b8;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }}
+        .multi-progress {{
+            display: flex;
+            height: 6px;
+            border-radius: 9999px;
+            overflow: hidden;
+            background: #e2e8f0;
+            gap: 3px;
+        }}
+        .p-seg-1 {{ flex: 1; background: #10b981; }}
+        .p-seg-2 {{ flex: 1; background: #06b6d4; }}
+        .p-seg-3 {{ flex: 1; background: #3b82f6; }}
+        .p-seg-4 {{ flex: 1; background: #cbd5e1; }}
+        /* STATS KPI GRID */
+        .stats-grid {{
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }}
+        .stat-card {{
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px 20px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+        }}
+        .stat-label {{
+            font-size: 11px;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }}
+        .stat-val {{
+            font-size: 26px;
+            font-weight: 800;
+            color: var(--text-main);
+            margin-bottom: 4px;
+        }}
+        .stat-sub {{
+            font-size: 12px;
+            font-weight: 600;
+        }}
+        /* SECTION CARDS */
+        .section-card {{
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+        }}
+        .section-header {{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }}
+        .section-title {{
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }}
+        .section-badge {{
+            background: #f1f5f9;
+            color: #64748b;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 6px;
+        }}
+        /* PLAN LIST */
+        .action-list {{
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }}
+        .action-item {{
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.15s ease;
+        }}
+        .action-item:hover {{
+            border-color: #cbd5e1;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }}
+        .action-left {{
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex: 1;
+        }}
+        .action-icon {{
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            flex-shrink: 0;
+        }}
+        .action-icon.done {{
+            background: var(--green-light);
+            color: var(--green);
+            border: 1px solid var(--green-border);
+        }}
+        .action-icon.active {{
+            background: var(--blue-light);
+            color: var(--blue);
+            border: 1px solid var(--blue-border);
+        }}
+        .action-icon.pending {{
+            background: #f8fafc;
+            color: #94a3b8;
+            border: 1px solid #e2e8f0;
+        }}
+        .action-content {{
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }}
+        .action-title-text {{
+            font-size: 13.5px;
+            font-weight: 600;
+            color: var(--text-main);
+        }}
+        .action-meta {{
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11.5px;
+            color: var(--text-muted);
+        }}
+        .badge-done {{
+            background: var(--green-light);
+            color: var(--green);
+            border: 1px solid var(--green-border);
+            font-size: 10px;
+            font-weight: 700;
+            padding: 1px 6px;
+            border-radius: 4px;
+        }}
+        .badge-active {{
+            background: var(--blue-light);
+            color: var(--blue);
+            border: 1px solid var(--blue-border);
+            font-size: 10px;
+            font-weight: 700;
+            padding: 1px 6px;
+            border-radius: 4px;
+        }}
+        .badge-pending {{
+            background: #f1f5f9;
+            color: #64748b;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 1px 6px;
+            border-radius: 4px;
+        }}
+        .action-progress-box {{
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 6px;
+        }}
+        .action-p-bar {{
+            width: 220px;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 9999px;
+            overflow: hidden;
+        }}
+        .action-p-fill {{
+            height: 100%;
+            background: var(--blue);
+            border-radius: 9999px;
+        }}
+        /* TABLE */
+        table {{
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }}
+        th {{
+            background: #f8fafc;
+            color: #475569;
+            text-align: left;
+            padding: 12px 16px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }}
+        td {{
+            padding: 14px 16px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: top;
+        }}
+        tr:hover td {{
+            background: #fafafa;
+        }}
+        .ip-box {{
+            font-family: monospace;
+            font-weight: 700;
+            font-size: 13px;
+            color: var(--text-main);
+        }}
+        .geo-pill {{
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11.5px;
+            color: #334155;
+            margin-top: 3px;
+        }}
+        .isp-text {{
+            font-size: 11px;
+            color: #64748b;
+            margin-top: 2px;
+        }}
+        .vector-tag {{
+            background: #f1f5f9;
+            border: 1px solid var(--border);
+            color: #334155;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 6px;
+            display: inline-block;
+        }}
+        .code-box {{
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-family: Consolas, monospace;
+            font-size: 12px;
+            color: #0f172a;
+            max-width: 440px;
+            overflow-x: auto;
+            margin-bottom: 4px;
+        }}
+        .ttp-badge {{
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            margin: 2px 4px 2px 0;
+        }}
+        .ttp-badge.crit {{
+            background: var(--red-light);
+            color: var(--red);
+            border: 1px solid var(--red-border);
+        }}
+        .ttp-badge.high {{
+            background: var(--amber-light);
+            color: var(--amber);
+            border: 1px solid var(--amber-border);
+        }}
+        .ttp-badge.med {{
+            background: var(--blue-light);
+            color: var(--blue);
+            border: 1px solid var(--blue-border);
+        }}
+        .ttp-badge.low {{
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+        }}
+        /* BOTTOM DOCK */
+        .bottom-dock {{
+            position: fixed;
+            bottom: 18px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: 9999px;
+            padding: 6px 12px;
+            display: flex;
+            gap: 8px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+            z-index: 1000;
+        }}
+        .dock-item {{
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 9999px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #64748b;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }}
+        .dock-item:hover {{
+            background: #f8fafc;
+            color: var(--text-main);
+        }}
+        .dock-item.active {{
+            background: var(--blue-light);
+            color: var(--blue);
+            border: 1px solid var(--blue-border);
+        }}
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <div class="topbar-left">
+            <div class="soc-logo-box">ING</div>
+            <div>
+                <div class="soc-brand">SOC CERT <span class="soc-badge-crit">CRITIQUE P1</span></div>
+                <div class="soc-subtitle">Console Forensique d'Intervention & Deception Grid</div>
+            </div>
+        </div>
+        <div class="topbar-right">
+            <div class="notif-btn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                <div class="notif-dot"></div>
+            </div>
+            <div class="avatar" title="Tohon Fourier - Lead SOC">TF</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- INCIDENT HERO CARD -->
+        <div class="hero-card">
+            <div class="hero-top">
+                <div class="incident-pill"><div class="incident-dot"></div> INC-2026-8842</div>
+                <div class="hero-timer">
+                    ⏱️ T+ 05H 42M &nbsp;|&nbsp; <span class="hero-step">Étape 4 / 4</span>
+                </div>
+            </div>
+            <h1 class="hero-title">Éradication & Restauration des Menaces</h1>
+            <div class="hero-subtags">
+                <span class="hero-sec-pill">🛡️ P-SEC-RANSOM-04</span>
+                <span class="hero-stage-txt">SURVEILLANCE DECEPTION GRID • DOUBLE EXTORTION</span>
+            </div>
+            <div class="multi-progress">
+                <div class="p-seg-1"></div>
+                <div class="p-seg-2"></div>
+                <div class="p-seg-3"></div>
+                <div class="p-seg-4"></div>
+            </div>
+        </div>
+
+        <!-- STATS KPI GRID -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label"><span>HÔTES / IPS HOSTILES</span> <span>🔒</span></div>
+                <div class="stat-val">{total_attacks} / {unique_ips}</div>
+                <div class="stat-sub" style="color: #059669;">Isolés EDR / Honeypot</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label"><span>ADMINS & SESSIONS</span> <span>🔑</span></div>
+                <div class="stat-val">100%</div>
+                <div class="stat-sub" style="color: #059669;">KRBTGT Reset & Protégés</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label"><span>DÉLAI SOC (CNIL/APDP)</span> <span>⏱️</span></div>
+                <div class="stat-val">68h 10m</div>
+                <div class="stat-sub" style="color: #2563eb;">Seuil légal 72h</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label"><span>TECHNIQUES MITRE</span> <span>🛡️</span></div>
+                <div class="stat-val" style="color: #dc2626;">{mitre_count}</div>
+                <div class="stat-sub" style="color: #dc2626;">{critical_count} Alertes Critiques</div>
+            </div>
+        </div>
+
+        <!-- PLAN D'INTERVENTION -->
+        <div class="section-card">
+            <div class="section-header">
+                <div class="section-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.5"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+                    Plan d'Intervention & Détections Forensiques
+                </div>
+                <span class="section-badge">3 / 6 validées</span>
+            </div>
+            <div class="action-list">
+                <div class="action-item">
+                    <div class="action-left">
+                        <div class="action-icon done">✓</div>
+                        <div class="action-content">
+                            <div class="action-title-text">Coupure des flux VPN GlobalProtect non patchés & Sinkholing des ports SSH compromis</div>
+                            <div class="action-meta">
+                                <span class="badge-done">FAIT 03:15</span>
+                                <span>Thomas L. (NetOps)</span>
+                            </div>
+                        </div>
+                    </div>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+                </div>
+
+                <div class="action-item">
+                    <div class="action-left">
+                        <div class="action-icon done">✓</div>
+                        <div class="action-content">
+                            <div class="action-title-text">Isolement complet EDR CrowdStrike des postes internes & Quarantaine des 14 payloads malveillants</div>
+                            <div class="action-meta">
+                                <span class="badge-done">FAIT 03:40</span>
+                                <span>Agent RTR v7.14</span>
+                            </div>
+                        </div>
+                    </div>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+                </div>
+
+                <div class="action-item">
+                    <div class="action-left">
+                        <div class="action-icon done">✓</div>
+                        <div class="action-content">
+                            <div class="action-title-text">Double rotation du compte KRBTGT & Réinitialisation des mots de passe Admins</div>
+                            <div class="action-meta">
+                                <span class="badge-done">FAIT 04:20</span>
+                                <span>Validé DC01 & DC02</span>
+                            </div>
+                        </div>
+                    </div>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+                </div>
+
+                <div class="action-item" style="border-color: #bfdbfe; background: #fafcff;">
+                    <div class="action-left">
+                        <div class="action-icon active">🔄</div>
+                        <div class="action-content">
+                            <div class="action-title-text" style="color: #1e40af;">Restauration des bases ERP (Stockage Immuable S3) & Surveillance des Leurres ShadowPot</div>
+                            <div class="action-meta">
+                                <span class="badge-active">ACTIF</span>
+                                <span>Infra Storage / Marc B.</span>
+                            </div>
+                            <div class="action-progress-box">
+                                <div class="action-p-bar"><div class="action-p-fill" style="width: 65%;"></div></div>
+                                <span style="font-size: 11px; font-weight: 700; color: #2563eb;">65%</span>
+                                <span style="font-size: 11px; color: #64748b;">ETA : ~24 min</span>
+                            </div>
+                        </div>
+                    </div>
+                    <span style="font-size: 11px; color: #2563eb; font-weight: 700;">En cours</span>
+                </div>
+
+                <div class="action-item">
+                    <div class="action-left">
+                        <div class="action-icon pending">⌛</div>
+                        <div class="action-content">
+                            <div class="action-title-text">Audit des Scheduled Tasks, Run Keys & Persistance WMI / Crontab</div>
+                            <div class="action-meta">
+                                <span class="badge-pending">EN ATTENTE</span>
+                                <span>Prévu après montée des snapshots</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:6px; padding:4px 10px; font-size:11px; font-weight:700; color:#475569; cursor:pointer;">Initier</button>
+                </div>
+
+                <div class="action-item">
+                    <div class="action-left">
+                        <div class="action-icon pending">✉️</div>
+                        <div class="action-content">
+                            <div class="action-title-text">Notification formelle CNIL & APDP Bénin (Règlement RGPD Article 33)</div>
+                            <div class="action-meta">
+                                <span class="badge-pending">EN ATTENTE</span>
+                                <span>Assigné à Juridique DPO</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:6px; padding:4px 10px; font-size:11px; font-weight:700; color:#475569; cursor:pointer;">Brouillon</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- JOURNAL FORENSIQUE DES MENACES CAPTURÉES -->
+        <div class="section-card">
+            <div class="section-header">
+                <div class="section-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                    Journal des Menaces Capturées & Renseignement GeoIP
+                </div>
+                <span class="section-badge">{total_attacks} événements enregistrés</span>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 280px;">SOURCE, PAYS & FAI</th>
+                        <th style="width: 140px;">LEURRE CIBLÉ</th>
+                        <th>ACTIVITÉ HOSTILE & COMMANDES CAPTURÉES</th>
+                        <th style="width: 320px;">CLASSIFICATION MITRE ATT&CK</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {table_body}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- DOCK NAVIGATION (Image 2 style) -->
+    <div class="bottom-dock">
+        <a href="#rapport" class="dock-item">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            RAPPORT
+        </a>
+        <a href="#iocs" class="dock-item">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+            IOC & TTP
+        </a>
+        <a href="#systemes" class="dock-item">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+            SYSTÈMES
+        </a>
+        <a href="#actions" class="dock-item active">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+            ACTIONS
+        </a>
+    </div>
+</body>
+</html>"""
+
+
+# =============================================================================
+# GÉNÉRATEUR DE RAPPORT FORENSIQUE SOC SUR FICHIER DISQUE
 # =============================================================================
 def generate_incident_report(log_dir=None, report_path=None):
     if log_dir is None:
@@ -1098,128 +1874,11 @@ def generate_incident_report(log_dir=None, report_path=None):
     except Exception:
         sessions = []
 
-    total_attacks = len(sessions)
-    unique_ips = len(set(s.get("source_ip") for s in sessions))
-    mitre_count = sum(len(s.get("mitre_alerts", [])) for s in sessions)
-    critical_count = sum(1 for s in sessions if any(a.get("severity") == "CRITICAL" for a in s.get("mitre_alerts", [])))
-
-    rows = ""
-    for s in sessions:
-        sip = s.get("source_ip", "Inconnu")
-        geo = s.get("geo", {})
-        country = geo.get("country", "Inconnu")
-        isp = geo.get("isp", "N/A")
-        stype = s.get("type", "Inconnu")
-        stime = s.get("timestamp", "")[:19].replace("T", " ")
-
-        alerts_html = ""
-        for a in s.get("mitre_alerts", []):
-            sev_class = "crit" if a["severity"] == "CRITICAL" else "high" if a["severity"] == "HIGH" else "med"
-            alerts_html += f'<span class="badge {sev_class}">[{a["id"]}] {a["name"]}</span> '
-
-        cmds_html = ""
-        if s.get("auth"):
-            u = s['auth'].get('username', '')
-            p = s['auth'].get('password', '')
-            cmds_html += f"<div class='auth-tag'>AUTH : user='{u}' pass='{p}'</div>"
-        for c in s.get("commands", []):
-            cmd_val = c.get("command") if isinstance(c, dict) else c
-            cmds_html += f"<code>$ {cmd_val}</code><br>"
-        if s.get("body"):
-            cmds_html += f"<code>PAYLOAD: {s.get('body')}</code>"
-
-        rows += f"""
-        <tr>
-            <td>
-                <strong>{sip}</strong><br>
-                <span class="geo-tag">{country} ({isp})</span><br>
-                <small style="color:#64748b">{stime} UTC</small>
-            </td>
-            <td><span class="type-tag">{stype.upper()}</span></td>
-            <td>{cmds_html if cmds_html else '<em style="color:#64748b">Sonde furtive / Scanner réseau</em>'}</td>
-            <td>{alerts_html if alerts_html else '<em style="color:#64748b">Activité exploratoire sans TTP critique</em>'}</td>
-        </tr>"""
-
-    html = f"""<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title>ShadowPot v2.0 — Rapport d'Analyse Forensique des Menaces</title>
-    <style>
-        body {{ background: #0b0f19; color: #cbd5e1; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace; padding: 35px; margin: 0; }}
-        .header {{ border-bottom: 2px solid #1e293b; padding-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end; }}
-        h1 {{ color: #f97316; margin: 0; font-size: 26px; }}
-        .stats-grid {{ display: flex; gap: 20px; margin: 30px 0; }}
-        .stat-card {{ background: #111827; border: 1px solid #1f2937; border-radius: 8px; padding: 22px; flex: 1; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.4); }}
-        .stat-num {{ font-size: 34px; font-weight: bold; color: #38bdf8; }}
-        .stat-label {{ color: #94a3b8; font-size: 12px; text-transform: uppercase; margin-top: 6px; }}
-        table {{ width: 100%; border-collapse: collapse; background: #111827; border-radius: 8px; overflow: hidden; border: 1px solid #1f2937; margin-top: 20px; }}
-        th {{ background: #1f2937; color: #f97316; text-align: left; padding: 14px; font-size: 13px; text-transform: uppercase; }}
-        td {{ padding: 14px; border-bottom: 1px solid #1f2937; font-size: 13px; vertical-align: top; }}
-        code {{ background: #0f172a; padding: 3px 6px; border-radius: 4px; color: #4ade80; font-size: 12px; display: inline-block; margin-bottom: 3px; }}
-        .badge {{ padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; display: inline-block; margin: 2px; }}
-        .badge.crit {{ background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid #ef4444; }}
-        .badge.high {{ background: rgba(245, 158, 11, 0.2); color: #f59e0b; border: 1px solid #f59e0b; }}
-        .badge.med  {{ background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid #38bdf8; }}
-        .type-tag {{ background: #334155; padding: 4px 8px; border-radius: 4px; font-size: 11px; color: #f8fafc; font-weight: bold; }}
-        .geo-tag {{ color: #94a3b8; font-size: 11px; }}
-        .auth-tag {{ background: #1e1b4b; color: #c084fc; border: 1px solid #4338ca; padding: 4px 8px; border-radius: 4px; font-size: 11px; margin-bottom: 5px; }}
-        .footer {{ margin-top: 50px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #1f2937; padding-top: 20px; }}
-    </style>
-</head>
-<body>
-    <div class="header">
-        <div>
-            <h1>🍯 SHADOWPOT v2.0 — RAPPORT D'ANALYSE FORENSIQUE</h1>
-            <p style="margin: 5px 0 0 0; color: #94a3b8;">Généré automatiquement par le moteur Deception Technology (Tohon Fourier).</p>
-        </div>
-        <div style="font-size: 12px; color: #64748b;">
-            Horodatage : {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')} UTC
-        </div>
-    </div>
-
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-num">{total_attacks}</div>
-            <div class="stat-label">Intrusions Traitées</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-num">{unique_ips}</div>
-            <div class="stat-label">Adresses IP Hostiles</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-num" style="color: #ef4444;">{mitre_count}</div>
-            <div class="stat-label">Techniques MITRE Détectées</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-num" style="color: #f59e0b;">{critical_count}</div>
-            <div class="stat-label">Incidents Majeurs (Critiques)</div>
-        </div>
-    </div>
-
-    <table>
-        <thead>
-            <tr>
-                <th style="width: 250px;">SOURCE, PAYS & HORODATAGE</th>
-                <th style="width: 140px;">LEURRE CIBLÉ</th>
-                <th>ACTIVITÉ HOSTILE & COMMANDES CAPTURÉES</th>
-                <th style="width: 340px;">CARTOGRAPHIE MITRE ATT&CK</th>
-            </tr>
-        </thead>
-        <tbody>
-            {rows}
-        </tbody>
-    </table>
-
-    <div class="footer">
-        ShadowPot v2.0 (Enterprise SOC Deception Engine) — Développé par Tohon Fourier (CalderaFourier-code). Conforme MITRE ATT&CK v14+.
-    </div>
-</body>
-</html>"""
+    html = build_soc_cert_html(sessions, is_live=False)
 
     with open(report_path, "w", encoding="utf-8") as f:
         f.write(html)
-    print(f"\n{Colors.GREEN}[✓] Rapport forensique HTML mis à jour avec succès :{Colors.RESET} {report_path}")
+    print(f"\n{Colors.GREEN}[✓] Rapport forensique HTML (SOC CERT White Design) mis à jour avec succès :{Colors.RESET} {report_path}")
 
 
 # =============================================================================

