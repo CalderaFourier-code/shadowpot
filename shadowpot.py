@@ -691,9 +691,24 @@ class WebHoneypotHandler(http.server.BaseHTTPRequestHandler):
             self._render_soc_dashboard()
             return
 
-        # Route API JSON Live pour le SOC
-        if path == "/_soc/api/stats":
+        # Route API JSON Live pour le SOC (polling temps réel)
+        if path in ["/_soc/api/events", "/_soc/api/stats"]:
             self._render_soc_api()
+            return
+
+        # Route Téléchargement des IoCs (Blacklist pare-feu)
+        if path == "/_soc/iocs":
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            ioc_file = os.path.join(script_dir, "logs", "iocs_blacklist.txt")
+            content = ""
+            if os.path.exists(ioc_file):
+                with open(ioc_file, "r", encoding="utf-8") as f:
+                    content = f.read()
+            self.send_response(200)
+            self.send_header("Content-Type", "text/plain; charset=utf-8")
+            self.send_header("Content-Disposition", "attachment; filename=iocs_blacklist.txt")
+            self.end_headers()
+            self.wfile.write(content.encode("utf-8"))
             return
 
         WebHoneypotHandler.stats["total_probes"] += 1
@@ -830,10 +845,32 @@ class WebHoneypotHandler(http.server.BaseHTTPRequestHandler):
         self.wfile.write(html.encode("utf-8"))
 
     def _render_soc_api(self):
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        session_file = os.path.join(script_dir, "logs", "sessions.json")
+        sessions = []
+        if os.path.exists(session_file):
+            try:
+                with open(session_file, "r", encoding="utf-8") as f:
+                    sessions = json.load(f)
+            except Exception:
+                sessions = []
+
+        unique_ips = list(set(s.get("source_ip") for s in sessions if s.get("source_ip")))
+        total_mitre = sum(len(s.get("mitre_alerts", [])) for s in sessions)
+        critical_count = sum(1 for s in sessions if any(a.get("severity") == "CRITICAL" for a in s.get("mitre_alerts", [])))
+
+        data = {
+            "total_attacks": len(sessions),
+            "unique_ips_count": len(unique_ips),
+            "total_mitre": total_mitre,
+            "critical_count": critical_count,
+            "sessions": sessions[-50:]
+        }
         self.send_response(200)
-        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Access-Control-Allow-Origin", "*")
         self.end_headers()
-        self.wfile.write(json.dumps(WebHoneypotHandler.stats).encode("utf-8"))
+        self.wfile.write(json.dumps(data, ensure_ascii=False).encode("utf-8"))
 
 
 class WebHoneypot(threading.Thread):
@@ -1035,21 +1072,18 @@ class MySQLHoneypot(threading.Thread):
 
 
 # =============================================================================
-# GÉNÉRATEUR DE RAPPORT FORENSIQUE & DASHBOARD (SOC CERT WHITE DESIGN)
+# GÉNÉRATEUR DE RAPPORT FORENSIQUE & DASHBOARD (SOC CERT WHITE DESIGN ÉPURÉ)
 # =============================================================================
 def build_soc_cert_html(sessions, is_live=False):
-    """Génère l'interface SOC CERT blanche conforme au dashboard d'intervention forensique."""
+    """Génère le dashboard SOC épuré en design blanc avec alertes en temps réel."""
     total_attacks = len(sessions)
-    unique_ips = len(set(s.get("source_ip") for s in sessions))
+    unique_ips = len(set(s.get("source_ip") for s in sessions if s.get("source_ip")))
     mitre_count = sum(len(s.get("mitre_alerts", [])) for s in sessions)
     critical_count = sum(1 for s in sessions if any(a.get("severity") == "CRITICAL" for a in s.get("mitre_alerts", [])))
-
-    refresh_meta = '<meta http-equiv="refresh" content="6">' if is_live else ""
 
     rows = ""
     for s in reversed(sessions):
         sip = s.get("source_ip", "Inconnu")
-        raw_ip = s.get("raw_ip", "")
         geo = s.get("geo") or {}
         code = (geo.get("country_code") or "").upper()
         flag = "🇧🇯" if code == "BJ" else "🇫🇷" if code == "FR" else "🇩🇪" if code == "DE" else "🇳🇱" if code == "NL" else "🇷🇺" if code == "RU" else "🇺🇸" if code == "US" else "🌐"
@@ -1059,31 +1093,29 @@ def build_soc_cert_html(sessions, is_live=False):
         stype = s.get("type", "Inconnu")
         stime = s.get("timestamp", "")[:19].replace("T", " ")
 
-        # Vector badge
         if stype == "shell":
-            vec_badge = '<span class="vector-tag" style="background:#ecfdf5; color:#065f46; border-color:#a7f3d0;">SSH (2222)</span>'
+            vec_badge = '<span class="vector-tag vec-ssh">SSH (2222)</span>'
         elif "web" in stype:
-            vec_badge = '<span class="vector-tag" style="background:#eff6ff; color:#1e40af; border-color:#bfdbfe;">WEB (8080)</span>'
+            vec_badge = '<span class="vector-tag vec-web">WEB (8080)</span>'
         elif "redis" in stype:
-            vec_badge = '<span class="vector-tag" style="background:#fef2f2; color:#991b1b; border-color:#fecaca;">REDIS (6379)</span>'
+            vec_badge = '<span class="vector-tag vec-redis">REDIS (6379)</span>'
         elif "mysql" in stype:
-            vec_badge = '<span class="vector-tag" style="background:#fefce8; color:#854d0e; border-color:#fde047;">MYSQL (3306)</span>'
+            vec_badge = '<span class="vector-tag vec-mysql">MYSQL (3306)</span>'
         else:
             vec_badge = f'<span class="vector-tag">{stype.upper()}</span>'
 
-        # Alerts MITRE
         alerts_html = ""
         for a in s.get("mitre_alerts", []):
             sev = a.get("severity", "LOW")
             sev_class = "crit" if sev == "CRITICAL" else "high" if sev == "HIGH" else "med" if sev == "MEDIUM" else "low"
             alerts_html += f'<span class="ttp-badge {sev_class}">[{a["id"]}] {a["name"]}</span>'
 
-        # Payloads / Commands
         cmds_html = ""
         if s.get("auth"):
             u = s['auth'].get('username', '')
             p = s['auth'].get('password', '')
-            cmds_html += f"<div style='background:#f1f5f9; border:1px solid #cbd5e1; border-radius:6px; padding:4px 8px; font-size:11px; margin-bottom:5px; color:#334155;'><strong>AUTH FORCÉE :</strong> user='{u}' | pass='{p}'</div>"
+            if u or p:
+                cmds_html += f"<div class='auth-box'><strong>AUTH CAPTURÉE :</strong> user='{u}' | pass='{p}'</div>"
 
         for c in s.get("commands", []):
             cmd_val = c.get("command") if isinstance(c, dict) else c
@@ -1092,31 +1124,140 @@ def build_soc_cert_html(sessions, is_live=False):
         if s.get("body"):
             cmds_html += f"<div class='code-box'>PAYLOAD: {s.get('body')}</div>"
 
-        activity_cell = cmds_html if cmds_html else '<em style="color:#94a3b8">Sonde furtive / Scanner réseau</em>'
-        alerts_cell = alerts_html if alerts_html else '<em style="color:#94a3b8">Activité exploratoire sans TTP critique</em>'
+        activity_cell = cmds_html if cmds_html else '<em style="color:#94a3b8">Sonde réseau d\'exploration</em>'
+        alerts_cell = alerts_html if alerts_html else '<em style="color:#94a3b8">Activité d\'exploration</em>'
 
         rows += f"""
         <tr>
+            <td><small style="color:#64748b; font-weight:600;">{stime} UTC</small></td>
             <td>
                 <div class="ip-box">{sip}</div>
                 <div class="geo-pill">{flag} <strong>{city}, {country}</strong></div>
                 <div class="isp-text">{isp}</div>
-                <small style="color:#94a3b8; font-size:11px;">{stime} UTC</small>
             </td>
             <td>{vec_badge}</td>
             <td>{activity_cell}</td>
             <td>{alerts_cell}</td>
         </tr>"""
 
-    table_body = rows if rows else '<tr><td colspan="4" style="text-align:center; padding:30px; color:#94a3b8;">En attente de tentatives d\'intrusion sur les leurres...</td></tr>'
+    table_body = rows if rows else '<tr><td colspan="5" style="text-align:center; padding:35px; color:#94a3b8;">En attente d\'attaques... Lancez une commande de test sur un leurre pour la voir apparaître ici en direct.</td></tr>'
+
+    live_script = """
+    <script>
+    let lastAttackCount = -1;
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        if (!t) return;
+        t.textContent = msg;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 3500);
+    }
+
+    async function pollLiveEvents() {
+        try {
+            const resp = await fetch('/_soc/api/events');
+            if (!resp.ok) return;
+            const data = await resp.json();
+
+            // Mise à jour des compteurs
+            document.getElementById('kpi-total').textContent = data.total_attacks;
+            document.getElementById('kpi-ips').textContent = data.unique_ips_count;
+            document.getElementById('kpi-mitre').textContent = data.total_mitre;
+            document.getElementById('kpi-crit').textContent = data.critical_count;
+            document.getElementById('hero-total').textContent = data.total_attacks + ' intrusions interceptées';
+
+            // Alerte notification en cas de nouvelle attaque
+            if (lastAttackCount !== -1 && data.total_attacks > lastAttackCount) {
+                const diff = data.total_attacks - lastAttackCount;
+                showToast(`🚨 ${diff} nouvelle(s) intrusion(s) interceptée(s) par ShadowPot !`);
+            }
+            lastAttackCount = data.total_attacks;
+
+            // Rendu du tableau en temps réel
+            const tbody = document.getElementById('events-tbody');
+            if (!data.sessions || data.sessions.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:35px; color:#94a3b8;">En attente d\\'attaques... Lancez une commande de test sur un leurre pour la voir apparaître ici en direct.</td></tr>';
+                return;
+            }
+
+            let html = '';
+            for (let i = data.sessions.length - 1; i >= 0; i--) {
+                const s = data.sessions[i];
+                const geo = s.geo || {};
+                const code = (geo.country_code || '').toUpperCase();
+                const flag = code === 'BJ' ? '🇧🇯' : code === 'FR' ? '🇫🇷' : code === 'DE' ? '🇩🇪' : code === 'NL' ? '🇳🇱' : code === 'RU' ? '🇷🇺' : code === 'US' ? '🇺🇸' : '🌐';
+                const country = geo.country || 'Bénin';
+                const city = geo.city || 'Cotonou';
+                const isp = geo.isp || 'SBIN Bénin';
+                const sip = s.source_ip || '127.0.0.1';
+                const stype = s.type || 'unknown';
+                const stime = (s.timestamp || '').slice(0, 19).replace('T', ' ');
+
+                let vecBadge = '';
+                if (stype === 'shell') vecBadge = '<span class="vector-tag vec-ssh">SSH (2222)</span>';
+                else if (stype.includes('web')) vecBadge = '<span class="vector-tag vec-web">WEB (8080)</span>';
+                else if (stype.includes('redis')) vecBadge = '<span class="vector-tag vec-redis">REDIS (6379)</span>';
+                else if (stype.includes('mysql')) vecBadge = '<span class="vector-tag vec-mysql">MYSQL (3306)</span>';
+                else vecBadge = '<span class="vector-tag">' + stype.toUpperCase() + '</span>';
+
+                let alerts = '';
+                (s.mitre_alerts || []).forEach(a => {
+                    const sev = a.severity || 'LOW';
+                    const cls = sev === 'CRITICAL' ? 'crit' : sev === 'HIGH' ? 'high' : sev === 'MEDIUM' ? 'med' : 'low';
+                    alerts += `<span class="ttp-badge ${cls}">[${a.id}] ${a.name}</span>`;
+                });
+
+                let cmds = '';
+                if (s.auth && (s.auth.username || s.auth.password)) {
+                    cmds += `<div class="auth-box"><strong>AUTH CAPTURÉE :</strong> user='${s.auth.username||""}' | pass='${s.auth.password||""}'</div>`;
+                }
+                (s.commands || []).forEach(c => {
+                    const cmdVal = typeof c === 'object' ? c.command : c;
+                    cmds += `<div class="code-box">$ ${cmdVal}</div>`;
+                });
+                if (s.body) {
+                    cmds += `<div class="code-box">PAYLOAD: ${s.body}</div>`;
+                }
+                if (!cmds) cmds = '<em style="color:#94a3b8">Sonde réseau d\\'exploration</em>';
+
+                html += `<tr>
+                    <td><small style="color:#64748b; font-weight:600;">${stime} UTC</small></td>
+                    <td>
+                        <div class="ip-box">${sip}</div>
+                        <div class="geo-pill">${flag} <strong>${city}, ${country}</strong></div>
+                        <div class="isp-text">${isp}</div>
+                    </td>
+                    <td>${vecBadge}</td>
+                    <td>${cmds}</td>
+                    <td>${alerts || '<em style="color:#94a3b8">Activité d\\'exploration</em>'}</td>
+                </tr>`;
+            }
+            tbody.innerHTML = html;
+        } catch (e) {
+            console.error('Erreur polling live:', e);
+        }
+    }
+
+    // Polling toutes les 1.5 secondes en temps réel sans rechargement
+    setInterval(pollLiveEvents, 1500);
+    pollLiveEvents();
+
+    function copyIocs() {
+        fetch('/_soc/iocs').then(r => r.text()).then(txt => {
+            navigator.clipboard.writeText(txt).then(() => {
+                showToast('✓ Liste noire des IoCs copiée dans le presse-papier !');
+            });
+        });
+    }
+    </script>
+    """ if is_live else ""
 
     return f"""<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SOC CERT — Console d'Intervention & Deception Grid (ShadowPot)</title>
-    {refresh_meta}
+    <title>SOC CERT — ShadowPot Deception Grid</title>
     <style>
         :root {{
             --bg: #f8fafc;
@@ -1143,13 +1284,13 @@ def build_soc_cert_html(sessions, is_live=False):
             color: var(--text-main);
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             margin: 0;
-            padding: 0 0 95px 0;
+            padding: 0 0 50px 0;
             -webkit-font-smoothing: antialiased;
         }}
         .topbar {{
             background: #ffffff;
             border-bottom: 1px solid var(--border);
-            padding: 12px 28px;
+            padding: 14px 32px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -1160,67 +1301,74 @@ def build_soc_cert_html(sessions, is_live=False):
         .topbar-left {{
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 14px;
         }}
-        .soc-logo-box {{
+        .soc-logo {{
             background: #f1f5f9;
             border: 1px solid #cbd5e1;
             border-radius: 6px;
             font-size: 11px;
             font-weight: 800;
-            padding: 4px 7px;
-            color: #475569;
+            padding: 4px 8px;
+            color: #334155;
             letter-spacing: 0.5px;
         }}
         .soc-brand {{
-            font-size: 16px;
+            font-size: 17px;
             font-weight: 800;
             color: var(--text-main);
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
         }}
-        .soc-badge-crit {{
-            background: var(--red-light);
-            color: var(--red);
-            border: 1px solid var(--red-border);
+        .live-pill {{
+            background: var(--green-light);
+            color: var(--green);
+            border: 1px solid var(--green-border);
             font-size: 10px;
             font-weight: 700;
-            padding: 2px 8px;
+            padding: 3px 10px;
             border-radius: 9999px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
             text-transform: uppercase;
         }}
-        .soc-subtitle {{
-            font-size: 11px;
-            color: var(--text-muted);
-            margin-top: 2px;
+        .live-dot {{
+            width: 7px;
+            height: 7px;
+            background: var(--green);
+            border-radius: 50%;
+            animation: pulse-dot 1.5s infinite;
+        }}
+        @keyframes pulse-dot {{
+            0% {{ transform: scale(0.9); opacity: 0.7; }}
+            50% {{ transform: scale(1.3); opacity: 1; }}
+            100% {{ transform: scale(0.9); opacity: 0.7; }}
         }}
         .topbar-right {{
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 12px;
         }}
-        .notif-btn {{
-            background: #f8fafc;
+        .btn-action {{
+            background: #ffffff;
             border: 1px solid var(--border);
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            color: #334155;
+            padding: 7px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
             cursor: pointer;
-            position: relative;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.15s ease;
         }}
-        .notif-dot {{
-            width: 8px;
-            height: 8px;
-            background: var(--red);
-            border-radius: 50%;
-            position: absolute;
-            top: 6px;
-            right: 6px;
-            border: 2px solid #fff;
+        .btn-action:hover {{
+            background: #f8fafc;
+            border-color: #cbd5e1;
         }}
         .avatar {{
             width: 36px;
@@ -1233,101 +1381,59 @@ def build_soc_cert_html(sessions, is_live=False):
             justify-content: center;
             font-weight: 700;
             font-size: 12px;
-            border: 2px solid #fff;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }}
         .container {{
-            max-width: 1260px;
+            max-width: 1280px;
             margin: 0 auto;
-            padding: 24px 20px;
+            padding: 24px 24px;
         }}
-        /* HERO INCIDENT CARD */
-        .hero-card {{
+        /* HERO STATUS */
+        .hero-banner {{
             background: #ffffff;
             border: 1px solid var(--border);
             border-radius: 12px;
             padding: 20px 24px;
             margin-bottom: 20px;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-        }}
-        .hero-top {{
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 8px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
         }}
-        .incident-pill {{
-            background: var(--blue-light);
-            color: var(--blue);
+        .hero-left h1 {{
+            margin: 0 0 6px 0;
+            font-size: 21px;
+            font-weight: 800;
+            color: var(--text-main);
+        }}
+        .hero-left p {{
+            margin: 0;
+            color: var(--text-muted);
+            font-size: 13px;
+        }}
+        .decoys-strip {{
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }}
+        .decoy-pill {{
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            padding: 3px 9px;
+            border-radius: 6px;
             font-size: 11px;
-            font-weight: 700;
-            padding: 3px 10px;
-            border-radius: 9999px;
+            font-weight: 600;
+            color: #475569;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 5px;
         }}
-        .incident-dot {{
+        .decoy-dot {{
             width: 6px;
             height: 6px;
             border-radius: 50%;
-            background: var(--blue);
+            background: #10b981;
         }}
-        .hero-timer {{
-            font-size: 12px;
-            color: var(--text-muted);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }}
-        .hero-step {{
-            background: var(--blue-light);
-            color: var(--blue);
-            font-weight: 700;
-            font-size: 11px;
-            padding: 2px 8px;
-            border-radius: 6px;
-        }}
-        .hero-title {{
-            font-size: 22px;
-            font-weight: 800;
-            color: var(--text-main);
-            margin: 0 0 8px 0;
-        }}
-        .hero-subtags {{
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-        }}
-        .hero-sec-pill {{
-            background: #f8fafc;
-            border: 1px solid var(--border);
-            color: #475569;
-            font-size: 11px;
-            font-weight: 600;
-            padding: 3px 8px;
-            border-radius: 6px;
-        }}
-        .hero-stage-txt {{
-            font-size: 11px;
-            font-weight: 700;
-            color: #94a3b8;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-        }}
-        .multi-progress {{
-            display: flex;
-            height: 6px;
-            border-radius: 9999px;
-            overflow: hidden;
-            background: #e2e8f0;
-            gap: 3px;
-        }}
-        .p-seg-1 {{ flex: 1; background: #10b981; }}
-        .p-seg-2 {{ flex: 1; background: #06b6d4; }}
-        .p-seg-3 {{ flex: 1; background: #3b82f6; }}
-        .p-seg-4 {{ flex: 1; background: #cbd5e1; }}
         /* STATS KPI GRID */
         .stats-grid {{
             display: grid;
@@ -1339,37 +1445,33 @@ def build_soc_cert_html(sessions, is_live=False):
             background: #ffffff;
             border: 1px solid var(--border);
             border-radius: 12px;
-            padding: 16px 20px;
+            padding: 18px 22px;
             box-shadow: 0 1px 2px rgba(0,0,0,0.02);
         }}
         .stat-label {{
             font-size: 11px;
             font-weight: 700;
-            color: #64748b;
+            color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
             margin-bottom: 6px;
         }}
         .stat-val {{
-            font-size: 26px;
+            font-size: 28px;
             font-weight: 800;
             color: var(--text-main);
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }}
         .stat-sub {{
             font-size: 12px;
             font-weight: 600;
         }}
-        /* SECTION CARDS */
+        /* SECTION CARD */
         .section-card {{
             background: #ffffff;
             border: 1px solid var(--border);
             border-radius: 12px;
             padding: 24px;
-            margin-bottom: 24px;
             box-shadow: 0 1px 2px rgba(0,0,0,0.02);
         }}
         .section-header {{
@@ -1385,127 +1487,6 @@ def build_soc_cert_html(sessions, is_live=False):
             display: flex;
             align-items: center;
             gap: 8px;
-        }}
-        .section-badge {{
-            background: #f1f5f9;
-            color: #64748b;
-            font-size: 11px;
-            font-weight: 600;
-            padding: 3px 8px;
-            border-radius: 6px;
-        }}
-        /* PLAN LIST */
-        .action-list {{
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }}
-        .action-item {{
-            background: #ffffff;
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 14px 18px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            transition: all 0.15s ease;
-        }}
-        .action-item:hover {{
-            border-color: #cbd5e1;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-        }}
-        .action-left {{
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            flex: 1;
-        }}
-        .action-icon {{
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            font-weight: bold;
-            flex-shrink: 0;
-        }}
-        .action-icon.done {{
-            background: var(--green-light);
-            color: var(--green);
-            border: 1px solid var(--green-border);
-        }}
-        .action-icon.active {{
-            background: var(--blue-light);
-            color: var(--blue);
-            border: 1px solid var(--blue-border);
-        }}
-        .action-icon.pending {{
-            background: #f8fafc;
-            color: #94a3b8;
-            border: 1px solid #e2e8f0;
-        }}
-        .action-content {{
-            display: flex;
-            flex-direction: column;
-            gap: 3px;
-        }}
-        .action-title-text {{
-            font-size: 13.5px;
-            font-weight: 600;
-            color: var(--text-main);
-        }}
-        .action-meta {{
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 11.5px;
-            color: var(--text-muted);
-        }}
-        .badge-done {{
-            background: var(--green-light);
-            color: var(--green);
-            border: 1px solid var(--green-border);
-            font-size: 10px;
-            font-weight: 700;
-            padding: 1px 6px;
-            border-radius: 4px;
-        }}
-        .badge-active {{
-            background: var(--blue-light);
-            color: var(--blue);
-            border: 1px solid var(--blue-border);
-            font-size: 10px;
-            font-weight: 700;
-            padding: 1px 6px;
-            border-radius: 4px;
-        }}
-        .badge-pending {{
-            background: #f1f5f9;
-            color: #64748b;
-            font-size: 10px;
-            font-weight: 700;
-            padding: 1px 6px;
-            border-radius: 4px;
-        }}
-        .action-progress-box {{
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-top: 6px;
-        }}
-        .action-p-bar {{
-            width: 220px;
-            height: 6px;
-            background: #e2e8f0;
-            border-radius: 9999px;
-            overflow: hidden;
-        }}
-        .action-p-fill {{
-            height: 100%;
-            background: var(--blue);
-            border-radius: 9999px;
         }}
         /* TABLE */
         table {{
@@ -1553,19 +1534,21 @@ def build_soc_cert_html(sessions, is_live=False):
             margin-top: 2px;
         }}
         .vector-tag {{
-            background: #f1f5f9;
-            border: 1px solid var(--border);
-            color: #334155;
-            font-size: 11px;
-            font-weight: 700;
             padding: 3px 8px;
             border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            border: 1px solid transparent;
             display: inline-block;
         }}
+        .vec-ssh {{ background: #ecfdf5; color: #065f46; border-color: #a7f3d0; }}
+        .vec-web {{ background: #eff6ff; color: #1e40af; border-color: #bfdbfe; }}
+        .vec-redis {{ background: #fef2f2; color: #991b1b; border-color: #fecaca; }}
+        .vec-mysql {{ background: #fefce8; color: #854d0e; border-color: #fde047; }}
         .code-box {{
             background: #f8fafc;
             border: 1px solid #e2e8f0;
-            padding: 6px 10px;
+            padding: 5px 9px;
             border-radius: 6px;
             font-family: Consolas, monospace;
             font-size: 12px;
@@ -1574,6 +1557,15 @@ def build_soc_cert_html(sessions, is_live=False):
             overflow-x: auto;
             margin-bottom: 4px;
         }}
+        .auth-box {{
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-size: 11px;
+            margin-bottom: 5px;
+            color: #334155;
+        }}
         .ttp-badge {{
             display: inline-block;
             padding: 3px 8px;
@@ -1581,275 +1573,121 @@ def build_soc_cert_html(sessions, is_live=False):
             font-size: 11px;
             font-weight: 700;
             margin: 2px 4px 2px 0;
+            border: 1px solid transparent;
         }}
-        .ttp-badge.crit {{
-            background: var(--red-light);
-            color: var(--red);
-            border: 1px solid var(--red-border);
-        }}
-        .ttp-badge.high {{
-            background: var(--amber-light);
-            color: var(--amber);
-            border: 1px solid var(--amber-border);
-        }}
-        .ttp-badge.med {{
-            background: var(--blue-light);
-            color: var(--blue);
-            border: 1px solid var(--blue-border);
-        }}
-        .ttp-badge.low {{
-            background: #f1f5f9;
-            color: #475569;
-            border: 1px solid #e2e8f0;
-        }}
-        /* BOTTOM DOCK */
-        .bottom-dock {{
+        .ttp-badge.crit {{ background: var(--red-light); color: var(--red); border-color: var(--red-border); }}
+        .ttp-badge.high {{ background: var(--amber-light); color: var(--amber); border-color: var(--amber-border); }}
+        .ttp-badge.med  {{ background: var(--blue-light); color: var(--blue); border-color: var(--blue-border); }}
+        .ttp-badge.low  {{ background: #f1f5f9; color: #475569; border-color: #e2e8f0; }}
+        /* TOAST ALERT */
+        .toast {{
             position: fixed;
-            bottom: 18px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #ffffff;
-            border: 1px solid var(--border);
-            border-radius: 9999px;
-            padding: 6px 12px;
-            display: flex;
-            gap: 8px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+            bottom: 24px;
+            right: 24px;
+            background: #0f172a;
+            color: #ffffff;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            display: none;
             z-index: 1000;
+            border-left: 4px solid var(--red);
         }}
-        .dock-item {{
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 14px;
-            border-radius: 9999px;
-            font-size: 12px;
-            font-weight: 700;
-            color: #64748b;
-            text-decoration: none;
-            cursor: pointer;
-            transition: all 0.15s ease;
-        }}
-        .dock-item:hover {{
-            background: #f8fafc;
-            color: var(--text-main);
-        }}
-        .dock-item.active {{
-            background: var(--blue-light);
-            color: var(--blue);
-            border: 1px solid var(--blue-border);
+        .toast.show {{ display: block; animation: slideIn 0.3s ease; }}
+        @keyframes slideIn {{
+            from {{ transform: translateY(20px); opacity: 0; }}
+            to {{ transform: translateY(0); opacity: 1; }}
         }}
     </style>
 </head>
 <body>
     <div class="topbar">
         <div class="topbar-left">
-            <div class="soc-logo-box">ING</div>
+            <div class="soc-logo">SOC</div>
             <div>
-                <div class="soc-brand">SOC CERT <span class="soc-badge-crit">CRITIQUE P1</span></div>
-                <div class="soc-subtitle">Console Forensique d'Intervention & Deception Grid</div>
+                <div class="soc-brand">ShadowPot Deception Grid <span class="live-pill"><span class="live-dot"></span> ACTIF TEMPS RÉEL</span></div>
             </div>
         </div>
         <div class="topbar-right">
-            <div class="notif-btn">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-                <div class="notif-dot"></div>
-            </div>
-            <div class="avatar" title="Tohon Fourier - Lead SOC">TF</div>
+            <button class="btn-action" onclick="copyIocs()">📋 Copier IoCs Blacklist</button>
+            <a href="/_soc/iocs" class="btn-action" download="iocs_blacklist.txt">💾 Télécharger IoCs</a>
+            <div class="avatar" title="Tohon Fourier - Lead Cybersécurité">TF</div>
         </div>
     </div>
 
     <div class="container">
-        <!-- INCIDENT HERO CARD -->
-        <div class="hero-card">
-            <div class="hero-top">
-                <div class="incident-pill"><div class="incident-dot"></div> INC-2026-8842</div>
-                <div class="hero-timer">
-                    ⏱️ T+ 05H 42M &nbsp;|&nbsp; <span class="hero-step">Étape 4 / 4</span>
+        <!-- HERO STATUS -->
+        <div class="hero-banner">
+            <div class="hero-left">
+                <h1>Console de Déception & Détection d'Intrusions (MITRE ATT&CK)</h1>
+                <p>Surveillance active des flux réseau hostiles piégés sur les 4 leurres d'infrastructure.</p>
+                <div class="decoys-strip">
+                    <span class="decoy-pill"><span class="decoy-dot"></span> SSH Linux (:2222)</span>
+                    <span class="decoy-pill"><span class="decoy-dot"></span> Web Admin (:8080)</span>
+                    <span class="decoy-pill"><span class="decoy-dot"></span> Redis NoSQL (:6379)</span>
+                    <span class="decoy-pill"><span class="decoy-dot"></span> MySQL DB (:3306)</span>
                 </div>
             </div>
-            <h1 class="hero-title">Éradication & Restauration des Menaces</h1>
-            <div class="hero-subtags">
-                <span class="hero-sec-pill">🛡️ P-SEC-RANSOM-04</span>
-                <span class="hero-stage-txt">SURVEILLANCE DECEPTION GRID • DOUBLE EXTORTION</span>
-            </div>
-            <div class="multi-progress">
-                <div class="p-seg-1"></div>
-                <div class="p-seg-2"></div>
-                <div class="p-seg-3"></div>
-                <div class="p-seg-4"></div>
+            <div>
+                <span id="hero-total" style="background: var(--blue-light); color: var(--blue); padding: 6px 14px; border-radius: 9999px; font-weight: 700; font-size: 12px;">{total_attacks} intrusions interceptées</span>
             </div>
         </div>
 
         <!-- STATS KPI GRID -->
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-label"><span>HÔTES / IPS HOSTILES</span> <span>🔒</span></div>
-                <div class="stat-val">{total_attacks} / {unique_ips}</div>
-                <div class="stat-sub" style="color: #059669;">Isolés EDR / Honeypot</div>
+                <div class="stat-label">Total Intrusions Traitées</div>
+                <div class="stat-val" id="kpi-total">{total_attacks}</div>
+                <div class="stat-sub" style="color: var(--blue);">100% piégées dans les leurres</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label"><span>ADMINS & SESSIONS</span> <span>🔑</span></div>
-                <div class="stat-val">100%</div>
-                <div class="stat-sub" style="color: #059669;">KRBTGT Reset & Protégés</div>
+                <div class="stat-label">Attaquants / IPs Uniques</div>
+                <div class="stat-val" id="kpi-ips">{unique_ips}</div>
+                <div class="stat-sub" style="color: var(--green);">Résolues GeoIP & FAI</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label"><span>DÉLAI SOC (CNIL/APDP)</span> <span>⏱️</span></div>
-                <div class="stat-val">68h 10m</div>
-                <div class="stat-sub" style="color: #2563eb;">Seuil légal 72h</div>
+                <div class="stat-label">Techniques MITRE ATT&CK</div>
+                <div class="stat-val" id="kpi-mitre">{mitre_count}</div>
+                <div class="stat-sub" style="color: var(--amber);">Cartographiées en direct</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label"><span>TECHNIQUES MITRE</span> <span>🛡️</span></div>
-                <div class="stat-val" style="color: #dc2626;">{mitre_count}</div>
-                <div class="stat-sub" style="color: #dc2626;">{critical_count} Alertes Critiques</div>
+                <div class="stat-label">Alertes Critiques (T1003/T1098/T1190)</div>
+                <div class="stat-val" id="kpi-crit" style="color: var(--red);">{critical_count}</div>
+                <div class="stat-sub" style="color: var(--red);">IoC Blacklisté automatiquement</div>
             </div>
         </div>
 
-        <!-- PLAN D'INTERVENTION -->
+        <!-- LIVE EVENTS TABLE -->
         <div class="section-card">
             <div class="section-header">
                 <div class="section-title">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.5"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
-                    Plan d'Intervention & Détections Forensiques
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                    Flux des Intrusions en Direct & Renseignement Forensique
                 </div>
-                <span class="section-badge">3 / 6 validées</span>
-            </div>
-            <div class="action-list">
-                <div class="action-item">
-                    <div class="action-left">
-                        <div class="action-icon done">✓</div>
-                        <div class="action-content">
-                            <div class="action-title-text">Coupure des flux VPN GlobalProtect non patchés & Sinkholing des ports SSH compromis</div>
-                            <div class="action-meta">
-                                <span class="badge-done">FAIT 03:15</span>
-                                <span>Thomas L. (NetOps)</span>
-                            </div>
-                        </div>
-                    </div>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
-                </div>
-
-                <div class="action-item">
-                    <div class="action-left">
-                        <div class="action-icon done">✓</div>
-                        <div class="action-content">
-                            <div class="action-title-text">Isolement complet EDR CrowdStrike des postes internes & Quarantaine des 14 payloads malveillants</div>
-                            <div class="action-meta">
-                                <span class="badge-done">FAIT 03:40</span>
-                                <span>Agent RTR v7.14</span>
-                            </div>
-                        </div>
-                    </div>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
-                </div>
-
-                <div class="action-item">
-                    <div class="action-left">
-                        <div class="action-icon done">✓</div>
-                        <div class="action-content">
-                            <div class="action-title-text">Double rotation du compte KRBTGT & Réinitialisation des mots de passe Admins</div>
-                            <div class="action-meta">
-                                <span class="badge-done">FAIT 04:20</span>
-                                <span>Validé DC01 & DC02</span>
-                            </div>
-                        </div>
-                    </div>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
-                </div>
-
-                <div class="action-item" style="border-color: #bfdbfe; background: #fafcff;">
-                    <div class="action-left">
-                        <div class="action-icon active">🔄</div>
-                        <div class="action-content">
-                            <div class="action-title-text" style="color: #1e40af;">Restauration des bases ERP (Stockage Immuable S3) & Surveillance des Leurres ShadowPot</div>
-                            <div class="action-meta">
-                                <span class="badge-active">ACTIF</span>
-                                <span>Infra Storage / Marc B.</span>
-                            </div>
-                            <div class="action-progress-box">
-                                <div class="action-p-bar"><div class="action-p-fill" style="width: 65%;"></div></div>
-                                <span style="font-size: 11px; font-weight: 700; color: #2563eb;">65%</span>
-                                <span style="font-size: 11px; color: #64748b;">ETA : ~24 min</span>
-                            </div>
-                        </div>
-                    </div>
-                    <span style="font-size: 11px; color: #2563eb; font-weight: 700;">En cours</span>
-                </div>
-
-                <div class="action-item">
-                    <div class="action-left">
-                        <div class="action-icon pending">⌛</div>
-                        <div class="action-content">
-                            <div class="action-title-text">Audit des Scheduled Tasks, Run Keys & Persistance WMI / Crontab</div>
-                            <div class="action-meta">
-                                <span class="badge-pending">EN ATTENTE</span>
-                                <span>Prévu après montée des snapshots</span>
-                            </div>
-                        </div>
-                    </div>
-                    <button style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:6px; padding:4px 10px; font-size:11px; font-weight:700; color:#475569; cursor:pointer;">Initier</button>
-                </div>
-
-                <div class="action-item">
-                    <div class="action-left">
-                        <div class="action-icon pending">✉️</div>
-                        <div class="action-content">
-                            <div class="action-title-text">Notification formelle CNIL & APDP Bénin (Règlement RGPD Article 33)</div>
-                            <div class="action-meta">
-                                <span class="badge-pending">EN ATTENTE</span>
-                                <span>Assigné à Juridique DPO</span>
-                            </div>
-                        </div>
-                    </div>
-                    <button style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:6px; padding:4px 10px; font-size:11px; font-weight:700; color:#475569; cursor:pointer;">Brouillon</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- JOURNAL FORENSIQUE DES MENACES CAPTURÉES -->
-        <div class="section-card">
-            <div class="section-header">
-                <div class="section-title">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
-                    Journal des Menaces Capturées & Renseignement GeoIP
-                </div>
-                <span class="section-badge">{total_attacks} événements enregistrés</span>
+                <span style="font-size: 11px; color: var(--text-muted); font-weight: 600;">Rafraîchissement automatique : 1.5s</span>
             </div>
             <table>
                 <thead>
                     <tr>
-                        <th style="width: 280px;">SOURCE, PAYS & FAI</th>
+                        <th style="width: 170px;">HORODATAGE UTC</th>
+                        <th style="width: 280px;">IP SOURCE, PAYS & FAI</th>
                         <th style="width: 140px;">LEURRE CIBLÉ</th>
                         <th>ACTIVITÉ HOSTILE & COMMANDES CAPTURÉES</th>
                         <th style="width: 320px;">CLASSIFICATION MITRE ATT&CK</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="events-tbody">
                     {table_body}
                 </tbody>
             </table>
         </div>
     </div>
 
-    <!-- DOCK NAVIGATION (Image 2 style) -->
-    <div class="bottom-dock">
-        <a href="#rapport" class="dock-item">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-            RAPPORT
-        </a>
-        <a href="#iocs" class="dock-item">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
-            IOC & TTP
-        </a>
-        <a href="#systemes" class="dock-item">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
-            SYSTÈMES
-        </a>
-        <a href="#actions" class="dock-item active">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-            ACTIONS
-        </a>
-    </div>
+    <div id="toast" class="toast"></div>
+
+    {live_script}
 </body>
 </html>"""
 
@@ -1878,7 +1716,7 @@ def generate_incident_report(log_dir=None, report_path=None):
 
     with open(report_path, "w", encoding="utf-8") as f:
         f.write(html)
-    print(f"\n{Colors.GREEN}[✓] Rapport forensique HTML (SOC CERT White Design) mis à jour avec succès :{Colors.RESET} {report_path}")
+    print(f"\n{Colors.GREEN}[✓] Rapport forensique HTML mis à jour avec succès :{Colors.RESET} {report_path}")
 
 
 # =============================================================================
